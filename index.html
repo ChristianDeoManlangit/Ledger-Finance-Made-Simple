@@ -1771,8 +1771,8 @@ const StorageLayer = (function(){
              |
        Google OAuth (Identity Services token client)
              |
-       Google Sheets  <-- shared sync layer, one spreadsheet
-             ^          per Google account, auto-discovered
+       Google Drive JSON file  <-- shared sync layer, one small
+             |                     app-owned file per account
     ---------+---------
     |        |         |
   Device   Device    Device      <- each device keeps its own local
@@ -1780,17 +1780,23 @@ const StorageLayer = (function(){
   data     data      data           it as primary for reads/writes
 
    There is no "main" device. Whichever device is open just pushes
-   its local state to the sheet (debounced) and pulls + merges
-   whenever it detects the sheet has newer data. The first device
-   to connect creates the spreadsheet; every later device signing
-   into the same Google account finds and reuses it automatically,
-   no spreadsheet URL/ID ever has to be typed in by hand.
+   its local state to the file (debounced) and pulls + merges
+   whenever it detects the file has newer data. The first device
+   to connect creates the file; every later device signing into the
+   same Google account finds and reuses it automatically, no file
+   ID/URL ever has to be typed in by hand.
+
+   Uses a single JSON file in Drive (via the drive.file scope,
+   which only ever sees files this app itself created) rather than
+   Google Sheets: it's one less API to enable, has no per-cell size
+   limit, and the data is JSON already so there's no format to
+   translate.
 
    SETUP REQUIRED: this needs an OAuth 2.0 "Web application" Client
    ID from https://console.cloud.google.com/apis/credentials, with
    this app's origin(s) added under "Authorized JavaScript origins",
-   and the Google Sheets API + Google Drive API enabled on the
-   project. Paste the Client ID below.
+   and the Google Drive API enabled on the project. Paste the
+   Client ID below.
    ============================================================ */
 const GoogleSync = (function(){
   const CLIENT_ID = "1012573484583-cv9qmq30c45m63e9n5jc2t8aq03h8905.apps.googleusercontent.com";
@@ -1798,17 +1804,16 @@ const GoogleSync = (function(){
     "https://www.googleapis.com/auth/drive.file",   // only files this app creates/opens
     "https://www.googleapis.com/auth/userinfo.email" // to show "Signed in as ..."
   ].join(" ");
-  const SHEET_NAME = "Ledger Sync Data";           // spreadsheet Drive discovers/creates
-  const RANGE = "Sheet1!A1";                        // single cell holding the JSON payload
+  const FILE_NAME = "ledger-sync-data.json";        // Drive file this app discovers/creates
   const DEVICE_ID_KEY = "ledger:sync:deviceId";
   const LAST_SYNCED_KEY = "ledger:sync:lastSyncedAt";
-  const SPREADSHEET_ID_KEY = "ledger:sync:spreadsheetId";
+  const FILE_ID_KEY = "ledger:sync:fileId";
   const EMAIL_KEY = "ledger:sync:email";
 
   let tokenClient = null;
   let accessToken = null;
   let tokenExpiresAt = 0;
-  let spreadsheetId = null;
+  let fileId = null;
   let email = null;
   let pushTimer = null;
   let pollTimer = null;
@@ -1840,22 +1845,22 @@ const GoogleSync = (function(){
   function getEmail(){ return email; }
 
   function loadCache(){
-    try{ spreadsheetId = localStorage.getItem(SPREADSHEET_ID_KEY) || null; }catch(e){}
+    try{ fileId = localStorage.getItem(FILE_ID_KEY) || null; }catch(e){}
     try{ email = localStorage.getItem(EMAIL_KEY) || null; }catch(e){}
   }
   function rememberConnection(){
     try{
-      if(spreadsheetId) localStorage.setItem(SPREADSHEET_ID_KEY, spreadsheetId);
+      if(fileId) localStorage.setItem(FILE_ID_KEY, fileId);
       if(email) localStorage.setItem(EMAIL_KEY, email);
     }catch(e){}
   }
   function forgetConnection(){
     try{
-      localStorage.removeItem(SPREADSHEET_ID_KEY);
+      localStorage.removeItem(FILE_ID_KEY);
       localStorage.removeItem(EMAIL_KEY);
       localStorage.removeItem(LAST_SYNCED_KEY);
     }catch(e){}
-    spreadsheetId = null;
+    fileId = null;
     email = null;
   }
   function lastSyncedAt(){
@@ -1878,7 +1883,7 @@ const GoogleSync = (function(){
       const text = await res.text().catch(()=>"");
       throw new Error("Google API error " + res.status + ": " + text.slice(0,200));
     }
-    return res.json();
+    return res;
   }
 
   function ensureTokenClient(){
@@ -1917,32 +1922,41 @@ const GoogleSync = (function(){
 
   async function fetchEmail(){
     try{
-      const info = await apiFetch("https://www.googleapis.com/oauth2/v2/userinfo");
+      const res = await apiFetch("https://www.googleapis.com/oauth2/v2/userinfo");
+      const info = await res.json();
       email = info.email || null;
       rememberConnection();
     }catch(e){ /* non-fatal, sync still works without a displayed email */ }
   }
 
-  /* Finds the app's existing sync spreadsheet in the signed-in
-     account's Drive, or creates one if this is a brand-new account.
+  /* Finds the app's existing sync file in the signed-in account's
+     Drive, or creates an empty one if this is a brand-new account.
      drive.file scope means only files this app created are visible,
      so this never touches or lists the user's other Drive content. */
-  async function findOrCreateSpreadsheet(){
-    const q = encodeURIComponent(`name='${SHEET_NAME}' and trashed=false`);
-    const list = await apiFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`);
+  async function findOrCreateFile(){
+    const q = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+    const listRes = await apiFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`);
+    const list = await listRes.json();
     if(list.files && list.files.length){
-      spreadsheetId = list.files[0].id;
+      fileId = list.files[0].id;
       rememberConnection();
-      return spreadsheetId;
+      return fileId;
     }
-    const created = await apiFetch("https://sheets.googleapis.com/v4/spreadsheets", {
+    const boundary = "ledgerboundary" + Date.now();
+    const metadata = { name: FILE_NAME, mimeType: "application/json" };
+    const body =
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+      `--${boundary}\r\nContent-Type: application/json\r\n\r\n{}\r\n` +
+      `--${boundary}--`;
+    const createRes = await apiFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ properties: { title: SHEET_NAME } })
+      headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+      body
     });
-    spreadsheetId = created.spreadsheetId;
+    const created = await createRes.json();
+    fileId = created.id;
     rememberConnection();
-    return spreadsheetId;
+    return fileId;
   }
 
   function buildPayload(){
@@ -1960,14 +1974,13 @@ const GoogleSync = (function(){
   }
 
   async function pushNow(){
-    if(!isSignedIn() || !spreadsheetId) return;
+    if(!isSignedIn() || !fileId) return;
     setStatus("syncing");
     const payload = buildPayload();
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(RANGE)}?valueInputOption=RAW`;
-    await apiFetch(url, {
-      method: "PUT",
+    await apiFetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ range: RANGE, majorDimension: "ROWS", values: [[ JSON.stringify(payload) ]] })
+      body: JSON.stringify(payload)
     });
     setLastSyncedAt(payload.updatedAt);
     setStatus("synced");
@@ -1987,16 +2000,15 @@ const GoogleSync = (function(){
      keeps the merge simple and predictable across many devices, at
      the cost of not merging two truly simultaneous edits field-by-field. */
   async function pullAndMerge(){
-    if(!isSignedIn() || !spreadsheetId) return false;
+    if(!isSignedIn() || !fileId) return false;
     setStatus("syncing");
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(RANGE)}`;
-    const res = await apiFetch(url);
-    const cell = res.values && res.values[0] && res.values[0][0];
-    if(!cell){ setStatus("synced"); return false; } // nothing pushed yet from any device
+    const res = await apiFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+    const text = await res.text();
     let remote;
-    try{ remote = JSON.parse(cell); }catch(e){ setStatus("synced"); return false; }
+    try{ remote = JSON.parse(text); }catch(e){ setStatus("synced"); return false; }
+    if(!remote || !remote.updatedAt){ setStatus("synced"); return false; } // nothing pushed yet from any device
     const localLast = lastSyncedAt();
-    if(remote.deviceId === getDeviceId() || !remote.updatedAt || remote.updatedAt <= localLast){
+    if(remote.deviceId === getDeviceId() || remote.updatedAt <= localLast){
       setStatus("synced");
       return false; // this device's own last push, or nothing newer
     }
@@ -2036,7 +2048,7 @@ const GoogleSync = (function(){
     setStatus("connecting");
     await requestToken(false);
     await fetchEmail();
-    await findOrCreateSpreadsheet();
+    await findOrCreateFile();
     const changed = await pullAndMerge();
     await pushNow(); // make sure this device's data is represented too
     startPolling();
@@ -2050,7 +2062,7 @@ const GoogleSync = (function(){
      invisibly; if not, sync just stays off until they connect again. */
   async function tryAutoConnect(){
     loadCache();
-    if(!isConfigured() || !spreadsheetId) return false;
+    if(!isConfigured() || !fileId) return false;
     try{
       await requestToken(true);
       await fetchEmail();
