@@ -322,6 +322,7 @@ a{color:inherit;}
   box-shadow:var(--shadow-1);
   position:relative;
   overflow:hidden;
+  min-width:0;
 }
 .stat-tile .stat-icon{
   width:32px;height:32px;border-radius:9px;
@@ -335,7 +336,12 @@ a{color:inherit;}
 .stat-tile.active .stat-icon{background:var(--amber-tint); color:var(--amber);}
 
 .stat-label{font-size:12.5px; color:var(--ink-soft); font-weight:500; margin-bottom:4px;}
-.stat-value{font-family:var(--font-display); font-size:27px; font-weight:500; letter-spacing:-.01em; font-variant-numeric:tabular-nums;}
+.stat-value{
+  font-family:var(--font-display); font-size:27px; font-weight:500; letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap; display:block; width:100%;
+  transform-origin:left center;
+}
 .stat-value.neg{color:var(--loss);}
 .stat-foot{font-size:12px; color:var(--ink-faint); margin-top:6px;}
 
@@ -409,6 +415,50 @@ input[list]::-webkit-list-button{ display:none !important; }
 .clear-filters{font-size:12.5px; color:var(--accent-ink); font-weight:600; cursor:pointer; background:none; border:none; padding:8px 4px;}
 .clear-filters:hover{text-decoration:underline;}
 
+/* ---- Custom select (replaces native <select> everywhere) ---- */
+.csel{ position:relative; display:inline-flex; min-width:0; }
+.csel.csel-block{ display:flex; width:100%; }
+.csel-native{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+.csel-trigger{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  cursor:pointer; user-select:none; min-width:0;
+  transition:border-color .15s var(--ease), background .15s var(--ease), color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.csel-trigger .csel-label{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.csel-trigger .csel-chevron{width:14px;height:14px; color:var(--ink-faint); flex-shrink:0; transition:transform .18s var(--ease-spring);}
+.csel-trigger.csel-open .csel-chevron{transform:rotate(180deg);}
+.csel-trigger.pill{
+  border:1px solid var(--border); background:var(--surface);
+  padding:8px 12px 8px 14px; border-radius:var(--radius-full);
+  font-size:13px; font-weight:500; color:var(--ink); white-space:nowrap;
+}
+.csel-trigger.pill:hover{border-color:var(--border-strong);}
+.csel-trigger.pill.csel-open{border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-tint);}
+.csel-trigger.pill.has-value{border-color:var(--accent); color:var(--accent-ink); background:var(--accent-tint);}
+.csel-trigger.pill.has-value .csel-chevron{color:var(--accent-ink);}
+.csel-trigger.field{
+  border:1px solid var(--border); background:var(--surface); width:100%;
+  padding:10px 12px; border-radius:var(--radius-m);
+  font-size:14px; font-weight:400; color:var(--ink);
+}
+.csel-trigger.field:hover{border-color:var(--border-strong);}
+.csel-trigger.field.csel-open{border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-tint);}
+.csel-menu{
+  position:fixed; z-index:400; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-m); box-shadow:var(--shadow-3); padding:6px;
+  max-height:280px; overflow-y:auto; min-width:160px;
+  opacity:0; transform:translateY(-6px) scale(.98); pointer-events:none;
+  transition:opacity .14s var(--ease), transform .16s var(--ease-spring);
+}
+.csel-menu.open{opacity:1; transform:translateY(0) scale(1); pointer-events:auto;}
+.csel-option{
+  padding:9px 12px; border-radius:8px; font-size:13.5px; font-weight:500; color:var(--ink);
+  cursor:pointer; transition:background .12s;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.csel-option:hover, .csel-option.csel-active{background:var(--surface-sunk);}
+.csel-option.csel-selected{color:var(--accent-ink); font-weight:700; background:var(--accent-tint);}
+
 .filter-toggle-row{display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
 .filter-count{
   display:inline-flex; align-items:center; justify-content:center;
@@ -435,18 +485,31 @@ input[list]::-webkit-list-button{ display:none !important; }
 .date-field .cal-trigger .icon{width:15px;height:15px;}
 .field .date-field .date-input{width:100%; padding-right:36px;}
 
-.cal-popover{
-  position:fixed; z-index:300;
-  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-l);
-  box-shadow:var(--shadow-3); padding:14px; width:280px;
-  opacity:0; transform:translateY(-6px) scale(.97); pointer-events:none;
-  transition:opacity .16s var(--ease), transform .16s var(--ease-spring);
+.cal-backdrop{
+  position:fixed; inset:0; z-index:299; background:rgba(20,20,22,.32);
+  opacity:0; pointer-events:none; transition:opacity .18s var(--ease);
 }
-.cal-popover.open{opacity:1; transform:translateY(0) scale(1); pointer-events:auto;}
-.cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
-.cal-title{font-size:13.5px; font-weight:700;}
-.cal-nav{width:26px;height:26px;border-radius:50%;border:none;background:none;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.cal-backdrop.open{opacity:1; pointer-events:auto;}
+.cal-popover{
+  position:fixed; z-index:300; top:50%; left:50%;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-l);
+  box-shadow:var(--shadow-3); padding:16px; width:280px;
+  opacity:0; transform:translate(-50%,-50%) scale(.94); pointer-events:none;
+  transition:opacity .18s var(--ease), transform .2s var(--ease-spring);
+}
+.cal-popover.open{opacity:1; transform:translate(-50%,-50%) scale(1); pointer-events:auto;}
+.cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:4px;}
+.cal-title{
+  font-size:13.5px; font-weight:700; background:none; border:none; cursor:pointer; color:var(--ink);
+  padding:5px 10px; border-radius:var(--radius-full); transition:background .12s;
+  display:flex; align-items:center; gap:5px;
+}
+.cal-title:hover{background:var(--surface-sunk);}
+.cal-title .icon{width:12px;height:12px; color:var(--ink-faint); transition:transform .18s var(--ease);}
+.cal-title.years-open .icon{transform:rotate(180deg);}
+.cal-nav{width:26px;height:26px;border-radius:50%;border:none;background:none;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;justify-content:center; flex-shrink:0; transition:background .12s, color .12s, transform .12s var(--ease-spring);}
 .cal-nav:hover{background:var(--surface-sunk); color:var(--ink);}
+.cal-nav:active{transform:scale(.88);}
 .cal-nav .icon{width:15px;height:15px;}
 .cal-dow{display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:2px;}
 .cal-dow span{font-size:10.5px; font-weight:700; color:var(--ink-faint); text-align:center; padding:4px 0;}
@@ -455,16 +518,27 @@ input[list]::-webkit-list-button{ display:none !important; }
   aspect-ratio:1; border-radius:9px; border:none; background:none; cursor:pointer;
   font-size:12.5px; font-weight:500; color:var(--ink);
   display:flex; align-items:center; justify-content:center;
-  transition:background .12s, color .12s;
+  transition:background .12s, color .12s, transform .12s var(--ease-spring);
 }
 .cal-day:hover{background:var(--surface-sunk);}
+.cal-day:active{transform:scale(.88);}
 .cal-day.muted{color:var(--ink-faint);}
 .cal-day.today{font-weight:700; color:var(--accent-ink);}
 .cal-day.selected{background:var(--accent); color:#fff;}
 .cal-day:disabled{visibility:hidden; cursor:default;}
+.cal-yeargrid{display:grid; grid-template-columns:repeat(4,1fr); gap:4px; max-height:216px; overflow-y:auto;}
+.cal-year{
+  padding:10px 4px; border-radius:9px; border:none; background:none; cursor:pointer;
+  font-size:13px; font-weight:600; color:var(--ink);
+  transition:background .12s, color .12s;
+}
+.cal-year:hover{background:var(--surface-sunk);}
+.cal-year.current{color:var(--accent-ink); font-weight:700;}
+.cal-year.selected{background:var(--accent); color:#fff;}
 .cal-foot{display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid var(--border);}
-.cal-foot button{background:none; border:none; font-size:12.5px; font-weight:600; color:var(--accent-ink); cursor:pointer; padding:4px 6px;}
-.cal-foot button:hover{text-decoration:underline;}
+.cal-foot button{background:none; border:none; font-size:12.5px; font-weight:600; color:var(--accent-ink); cursor:pointer; padding:4px 6px; border-radius:6px; transition:background .12s;}
+.cal-foot button:hover{background:var(--accent-tint);}
+
 
 /* ---- Payment log modal ---- */
 .pl-summary{display:flex; justify-content:space-between; background:var(--surface-sunk); border:1px solid var(--border); border-radius:var(--radius-m); padding:14px 16px; margin-bottom:16px;}
@@ -1051,6 +1125,19 @@ input[list]::-webkit-list-button{ display:none !important; }
 .btn.danger{background:var(--loss); border-color:var(--loss); color:#fff;}
 .btn.danger:hover{background:#C4341F;}
 
+.btn-google{
+  width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:10px 18px; border-radius:var(--radius-full); font-size:14px; font-weight:600;
+  cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--ink);
+  transition:background .15s, transform .12s var(--ease-spring), border-color .15s, box-shadow .15s;
+}
+.btn-google:hover{background:var(--surface-sunk); box-shadow:var(--shadow-1);}
+.btn-google:active{transform:scale(.97);}
+.btn-google .google-g{width:18px; height:18px; flex-shrink:0;}
+.btn-google.danger{background:transparent; border-color:var(--border); color:var(--loss);}
+.btn-google.danger:hover{background:var(--loss-tint); border-color:var(--loss);}
+.btn-google.danger .icon{width:16px; height:16px; stroke:var(--loss);}
+
 .import-drop{
   border:1.5px dashed var(--border-strong); border-radius:var(--radius-m);
   padding:28px 16px; text-align:center; color:var(--ink-soft); font-size:13.5px;
@@ -1278,6 +1365,16 @@ input[list]::-webkit-list-button{ display:none !important; }
 
   <!-- ============== ANALYTICS VIEW ============== -->
   <div id="analyticsView" style="display:none;">
+    <div class="filter-toggle-row">
+      <button class="chip-btn" id="anFilterToggle"><svg class="icon"><use href="#i-slider"/></svg>Filters<span class="filter-count" id="anFilterCount" style="display:none;"></span></button>
+    </div>
+    <div class="filter-panel" id="anFilterPanel">
+      <div class="filterbar filterbar-inner">
+        <div class="date-field"><input type="text" class="date-input" id="anFrom" readonly placeholder="From date"><button type="button" class="cal-trigger" data-cal-target="anFrom" aria-label="Choose from date"><svg class="icon"><use href="#i-calendar"/></svg></button></div>
+        <div class="date-field"><input type="text" class="date-input" id="anTo" readonly placeholder="To date"><button type="button" class="cal-trigger" data-cal-target="anTo" aria-label="Choose to date"><svg class="icon"><use href="#i-calendar"/></svg></button></div>
+        <button class="clear-filters" id="anClearFilters">Clear filters</button>
+      </div>
+    </div>
     <div class="an-grid" id="analyticsGrid"></div>
   </div>
 
@@ -1662,11 +1759,19 @@ input[list]::-webkit-list-button{ display:none !important; }
       <div style="border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
         <label style="display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:8px;">Cross-device sync</label>
         <p style="font-size:12.5px; color:var(--ink-faint); margin:0 0 10px;" id="syncStatusText">Not connected. Sign in with Google to sync this Ledger across your phone, laptop, tablet, and any other device.</p>
-        <button class="btn full" id="syncConnectBtn" type="button">
-          <svg class="icon" style="width:16px;height:16px;" viewBox="0 0 20 20"><use href="#i-globe"/></svg>
-          Continue with Google
+        <button class="btn-google" id="syncConnectBtn" type="button">
+          <svg class="google-g" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+            <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+            <path fill="#FBBC05" d="M11.69 28.18A13.99 13.99 0 0 1 10.89 24c0-1.45.25-2.86.7-4.18v-5.7H4.34A21.99 21.99 0 0 0 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+            <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+          </svg>
+          <span>Continue with Google</span>
         </button>
-        <button class="btn danger full" id="syncDisconnectBtn" type="button" style="display:none; margin-top:8px;">Disconnect this device</button>
+        <button class="btn-google danger" id="syncDisconnectBtn" type="button" style="display:none; margin-top:8px;">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#i-x"/></svg>
+          <span>Disconnect this device</span>
+        </button>
       </div>
       <div style="border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
         <label style="display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:8px;">Data</label>
@@ -1695,14 +1800,16 @@ input[list]::-webkit-list-button{ display:none !important; }
 </div>
 
 <!-- Calendar popover (shared) -->
+<div class="cal-backdrop" id="calBackdrop"></div>
 <div class="cal-popover" id="calPopover">
   <div class="cal-head">
-    <button type="button" class="cal-nav" data-nav="-1" aria-label="Previous month"><svg class="icon"><use href="#i-chevron-left"/></svg></button>
-    <div class="cal-title" id="calTitle"></div>
-    <button type="button" class="cal-nav" data-nav="1" aria-label="Next month"><svg class="icon"><use href="#i-chevron-right"/></svg></button>
+    <button type="button" class="cal-nav" data-nav="-1" aria-label="Previous"><svg class="icon"><use href="#i-chevron-left"/></svg></button>
+    <button type="button" class="cal-title" id="calTitle"><span id="calTitleText"></span><svg class="icon"><use href="#i-chevron-down"/></svg></button>
+    <button type="button" class="cal-nav" data-nav="1" aria-label="Next"><svg class="icon"><use href="#i-chevron-right"/></svg></button>
   </div>
-  <div class="cal-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+  <div class="cal-dow" id="calDow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
   <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-yeargrid" id="calYearGrid" style="display:none;"></div>
   <div class="cal-foot">
     <button type="button" id="calToday">Today</button>
     <button type="button" id="calClear">Clear</button>
@@ -1901,7 +2008,9 @@ const GoogleSync = (function(){
 
   /* Requests an access token. "silent" tries with no UI (used for
      auto-reconnect on later devices/sessions); pass false to force
-     the account picker / consent screen on an explicit sign-in click. */
+     the account picker / consent screen on an explicit sign-in click.
+     Passing the previously-seen email as a login hint measurably
+     improves how often the silent path succeeds. */
   function requestToken(silent){
     return new Promise((resolve, reject)=>{
       try{
@@ -1915,9 +2024,24 @@ const GoogleSync = (function(){
             reject(new Error((resp && resp.error) || "sign-in-failed"));
           }
         };
-        client.requestAccessToken({ prompt: silent ? "none" : "consent" });
+        const opts = { prompt: silent ? "none" : "consent" };
+        if(silent && email) opts.hint = email;
+        client.requestAccessToken(opts);
       }catch(e){ reject(e); }
     });
+  }
+  /* Silent token requests can fail spuriously (GIS iframe not warmed up
+     yet, a slow network, etc.) as well as for real reasons (the browser
+     has no active Google session). Give it a couple of quick retries
+     before treating it as a genuine sign-out. */
+  async function requestTokenSilentWithRetry(attempts){
+    attempts = attempts || 3;
+    let lastErr;
+    for(let i=0;i<attempts;i++){
+      try{ return await requestToken(true); }
+      catch(e){ lastErr = e; if(i < attempts-1) await new Promise(r=>setTimeout(r, 400 + i*400)); }
+    }
+    throw lastErr;
   }
 
   async function fetchEmail(){
@@ -2059,12 +2183,19 @@ const GoogleSync = (function(){
   /* Silent reconnect on boot: if this browser previously connected,
      try to get a token without prompting. If the person is still
      signed into that Google account in the browser this succeeds
-     invisibly; if not, sync just stays off until they connect again. */
+     invisibly; if not, we keep the cached connection info (fileId,
+     email) rather than wiping it, so the UI shows "reconnect" instead
+     of looking fully signed-out, and one tap on Continue with Google
+     picks the same account back up. We also retry when the tab
+     regains focus, since a session that wasn't available on first
+     load (e.g. cookies not yet warmed, or the person just signed into
+     Google in another tab) may become available shortly after. */
+  let autoConnectRetryWired = false;
   async function tryAutoConnect(){
     loadCache();
     if(!isConfigured() || !fileId) return false;
     try{
-      await requestToken(true);
+      await requestTokenSilentWithRetry(3);
       await fetchEmail();
       const changed = await pullAndMerge();
       startPolling();
@@ -2072,7 +2203,18 @@ const GoogleSync = (function(){
       if(changed && typeof renderAll === "function") renderAll();
       return true;
     }catch(e){
-      setStatus("signed-out");
+      setStatus("reconnect-needed"); // keep fileId/email cached, do NOT forgetConnection()
+      if(!autoConnectRetryWired){
+        autoConnectRetryWired = true;
+        document.addEventListener("visibilitychange", ()=>{
+          if(document.visibilityState === "visible" && !isSignedIn() && fileId){
+            tryAutoConnect();
+          }
+        });
+        window.addEventListener("focus", ()=>{
+          if(!isSignedIn() && fileId) tryAutoConnect();
+        });
+      }
       return false;
     }
   }
@@ -2102,7 +2244,7 @@ let state = {
   wallets: [],
   walletTransactions: [],
   goals: [],
-  settings: { currency: "₱", userName:"", onboardingDone:false, borrowerPhotos:{}, tileView:"grid" },
+  settings: { currency: "₱", userName:"", onboardingDone:false, borrowerPhotos:{}, tileView:"grid", tileViewByTab:{wallets:"grid", goals:"grid", ledger:"grid"} },
   mainView: "wallets",
   walletsTab: "wallets",
   goalsTab: "goals",
@@ -2281,7 +2423,33 @@ function paidCount(t){ return (t.payments||[]).length; }
 function paidAmount(t){ return round2((t.payments||[]).reduce((s,p)=>s+p.amount,0)); }
 function remaining(t){ return Math.max(0, round2(t.requested - paidAmount(t))); }
 function isComplete(t){ return paidAmount(t) >= t.requested - 0.005; }
-function isOverdue(t){ return !isComplete(t) && t.due && new Date(t.due) < new Date(new Date().toDateString()); }
+/* Shifts an ISO "YYYY-MM-DD" date forward by `months` whole months,
+   clamping the day to the last day of the target month (e.g. Jan 31 + 1mo = Feb 28/29). */
+function shiftDueDate(iso, months){
+  const [y,m,d] = iso.split("-").map(Number);
+  let total = (m - 1) + months;
+  const ty = y + Math.floor(total/12);
+  const tm = ((total%12)+12)%12;
+  const daysInTarget = new Date(ty, tm+1, 0).getDate();
+  const td = Math.min(d, daysInTarget);
+  return ty + "-" + String(tm+1).padStart(2,"0") + "-" + String(td).padStart(2,"0");
+}
+/* A transaction's due date recurs monthly rather than staying fixed: with N
+   installments, due dates are set, set+1mo, set+2mo, ... up to N-1 months out.
+   Only the date that has actually arrived is ever surfaced, so the schedule
+   isn't shown in advance, it just rolls forward once each prior date passes. */
+function currentDueDate(t){
+  if(!t.due) return t.due;
+  const totalInstallments = Math.max(1, t.installmentsTotal || 1);
+  const maxShift = totalInstallments - 1;
+  const today = todayStr();
+  let shift = 0;
+  while(shift < maxShift && shiftDueDate(t.due, shift+1) <= today){
+    shift++;
+  }
+  return shiftDueDate(t.due, shift);
+}
+function isOverdue(t){ return !isComplete(t) && t.due && currentDueDate(t) < todayStr(); }
 function statusOf(t){ if(isComplete(t)) return "completed"; if(isOverdue(t)) return "overdue"; return "active"; }
 function statusLabel(s){ return {active:"Active", completed:"Completed", overdue:"Overdue"}[s]; }
 function typeLabel(t){ return t; }
@@ -2414,6 +2582,20 @@ function renderSummary(){
   if(state.mainView === "wallets") renderWalletSummary();
   else if(state.mainView === "goals") renderGoalsSummary();
   else renderLedgerSummary();
+  fitStatValues();
+}
+/* Shrinks any .stat-value text that's too wide for its tile (very large
+   currency figures) instead of letting it clip against overflow:hidden. */
+function fitStatValues(){
+  document.querySelectorAll(".stat-value").forEach(el=>{
+    el.style.transform = "scale(1)";
+    const available = el.parentElement.clientWidth;
+    const needed = el.scrollWidth;
+    if(needed > available && available > 0){
+      const scale = Math.max(0.6, available / needed);
+      el.style.transform = "scale(" + scale.toFixed(3) + ")";
+    }
+  });
 }
 function renderGoalsSummary(){
   const totalGoals = state.goals.length;
@@ -3097,20 +3279,36 @@ function renderAll(){
 /* ============================================================
    VIEW TOGGLE, grid vs. stacked, shared across Wallets/Goals/Ledger
    ============================================================ */
+const TILE_VIEW_GRID_MAP = { walletGrid:"wallets", goalGrid:"goals", txGrid:"ledger" };
+function tileViewMap(){
+  if(!state.settings.tileViewByTab){
+    // migrate the old single global setting to the new per-tab map
+    const v = state.settings.tileView || "grid";
+    state.settings.tileViewByTab = { wallets:v, goals:v, ledger:v };
+  }
+  return state.settings.tileViewByTab;
+}
+function activeTileViewKey(){
+  return state.mainView === "wallets" ? "wallets" : state.mainView === "goals" ? "goals" : "ledger";
+}
 function applyTileView(){
-  const mode = state.settings.tileView || "grid";
-  ["walletGrid","goalGrid","txGrid"].forEach(id=>{
+  const map = tileViewMap();
+  Object.keys(TILE_VIEW_GRID_MAP).forEach(id=>{
+    const key = TILE_VIEW_GRID_MAP[id];
+    const mode = map[key] || "grid";
     const el = document.getElementById(id);
     if(el) el.classList.toggle("stacked", mode==="stacked");
   });
+  const activeMode = map[activeTileViewKey()] || "grid";
   document.querySelectorAll("[data-viewmode]").forEach(b=>{
-    b.classList.toggle("is-active", b.getAttribute("data-viewmode")===mode);
+    b.classList.toggle("is-active", b.getAttribute("data-viewmode")===activeMode);
   });
 }
 document.addEventListener("click", function(e){
   const btn = e.target.closest("[data-viewmode]");
   if(!btn) return;
-  state.settings.tileView = btn.getAttribute("data-viewmode");
+  const map = tileViewMap();
+  map[activeTileViewKey()] = btn.getAttribute("data-viewmode");
   persist();
   applyTileView();
 });
@@ -3344,6 +3542,8 @@ function renderPaymentModal(){
         </div>` : ``}
       </div>`;
     setDv("payDate", todayStr());
+    const payWalletEl = document.getElementById("payWallet");
+    if(payWalletEl) enhanceSelect(payWalletEl, "field");
   }
 }
 document.getElementById("paymentClose").addEventListener("click", closePaymentModal);
@@ -4088,6 +4288,12 @@ function switchTab(tab){
 document.querySelectorAll(".tab[data-tab]").forEach(b=>b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
 
 /* ---- Top-level Wallets / Goals / Ledger / Analytics switcher ---- */
+function animateViewIn(el){
+  if(!el) return;
+  el.classList.remove("view-anim");
+  void el.offsetWidth; // force reflow so the animation restarts
+  el.classList.add("view-anim");
+}
 function switchMainView(view){
   state.mainView = view;
   document.querySelectorAll(".tab[data-view]").forEach(b=>b.classList.toggle("is-active", b.dataset.view===view));
@@ -4098,6 +4304,7 @@ function switchMainView(view){
   document.getElementById("summary").style.display = view==="analytics" ? "none" : "grid";
   closeAllMenus();
   renderAll();
+  animateViewIn(document.getElementById(view+"View"));
 }
 document.querySelectorAll(".tab[data-view]").forEach(b=>b.addEventListener("click", ()=>switchMainView(b.dataset.view)));
 
@@ -4389,7 +4596,12 @@ function refreshSyncUI(status){
     textEl.textContent = `${label}${who}. This device stays up to date automatically wherever you sign in with the same Google account.`;
   } else if(status === "connecting"){
     textEl.textContent = "Connecting…";
+  } else if(status === "reconnect-needed"){
+    const who = GoogleSync.getEmail() ? ` as ${GoogleSync.getEmail()}` : "";
+    connectBtn.querySelector("span").textContent = "Reconnect to Google";
+    textEl.textContent = `Signed in${who} before, but this browser couldn't silently reconnect (that can happen after clearing cookies or in private browsing). Your data's still here, tap below to reconnect.`;
   } else {
+    connectBtn.querySelector("span").textContent = "Continue with Google";
     textEl.textContent = "Not connected. Sign in with Google to sync this Ledger across your phone, laptop, tablet, and any other device.";
   }
 }
@@ -4490,12 +4702,148 @@ function updateScrollLock(){
 })();
 
 /* ============================================================
+   CUSTOM SELECT, replaces native <select> dropdowns (which render
+   with the browser's own unstyled option list) with a fully styled
+   trigger + floating listbox. The underlying <select> stays in the
+   DOM (hidden) so all existing code that reads/sets .value or
+   listens for "change" keeps working untouched: we just intercept
+   the value setter and observe option-list mutations to keep the
+   custom UI in sync automatically, however it gets populated.
+   ============================================================ */
+let openCselMenu = null;
+function cleanupDetachedCselMenus(){
+  document.querySelectorAll(".csel-menu").forEach(m=>{
+    if(m._select && !m._select.isConnected) m.remove();
+  });
+}
+function enhanceSelect(select, style){
+  if(!select || select._cselWired) return;
+  select._cselWired = true;
+  cleanupDetachedCselMenus();
+
+  const wrap = document.createElement("div");
+  wrap.className = "csel" + (style === "field" ? " csel-block" : "");
+  select.parentNode.insertBefore(wrap, select);
+  wrap.appendChild(select);
+  select.classList.add("csel-native");
+  select.tabIndex = -1;
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "csel-trigger " + style;
+  trigger.innerHTML = `<span class="csel-label"></span><svg class="icon csel-chevron"><use href="#i-chevron-down"/></svg>`;
+  wrap.appendChild(trigger);
+
+  const menu = document.createElement("div");
+  menu.className = "csel-menu";
+  menu._trigger = trigger;
+  menu._select = select;
+  document.body.appendChild(menu);
+
+  const labelEl = trigger.querySelector(".csel-label");
+
+  function sync(){
+    const opt = select.options[select.selectedIndex];
+    labelEl.textContent = opt ? opt.text : "";
+    if(style === "pill") trigger.classList.toggle("has-value", !!select.value);
+    menu.innerHTML = Array.from(select.options).map((o,i)=>
+      `<div class="csel-option${i===select.selectedIndex?" csel-selected":""}" data-idx="${i}">${esc(o.text)}</div>`
+    ).join("");
+  }
+  select._cselSync = sync;
+  sync();
+
+  // Intercept .value = x (used throughout the app to set filters/forms)
+  // so the trigger label and menu stay in sync no matter who sets it.
+  const proto = Object.getPrototypeOf(select);
+  const nativeDesc = Object.getOwnPropertyDescriptor(proto, "value")
+    || Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  Object.defineProperty(select, "value", {
+    get(){ return nativeDesc.get.call(select); },
+    set(v){ nativeDesc.set.call(select, v); sync(); },
+    configurable:true
+  });
+  // Options are frequently repopulated wholesale (filters, wallet
+  // pickers, etc); catch that and re-sync automatically.
+  new MutationObserver(sync).observe(select, {childList:true});
+
+  function position(){
+    const r = trigger.getBoundingClientRect();
+    const menuW = Math.max(r.width, 180);
+    menu.style.width = menuW + "px";
+    let left = Math.min(r.left, window.innerWidth - menuW - 8);
+    left = Math.max(8, left);
+    let top = r.bottom + 6;
+    const estH = Math.min(280, menu.scrollHeight || 280);
+    if(top + estH > window.innerHeight - 8) top = Math.max(8, r.top - estH - 6);
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+  }
+  function openMenu(){
+    if(openCselMenu && openCselMenu !== menu) closeMenu(openCselMenu);
+    sync();
+    position();
+    menu.classList.add("open");
+    trigger.classList.add("csel-open");
+    openCselMenu = menu;
+    requestAnimationFrame(position);
+  }
+  function closeMenu(m){
+    (m||menu).classList.remove("open");
+    trigger.classList.remove("csel-open");
+    if(openCselMenu === (m||menu)) openCselMenu = null;
+  }
+  trigger.addEventListener("click", (e)=>{
+    e.stopPropagation();
+    if(trigger.disabled) return;
+    if(menu.classList.contains("open")) closeMenu(); else openMenu();
+  });
+  trigger.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter" || e.key === " " || e.key === "ArrowDown"){
+      e.preventDefault();
+      if(!menu.classList.contains("open")) openMenu();
+    } else if(e.key === "Escape"){
+      closeMenu();
+    }
+  });
+  menu.addEventListener("click", (e)=>{
+    const opt = e.target.closest(".csel-option");
+    if(!opt) return;
+    const idx = parseInt(opt.getAttribute("data-idx"));
+    if(idx === select.selectedIndex){ closeMenu(); return; }
+    select.selectedIndex = idx;
+    sync();
+    closeMenu();
+    select.dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  window.addEventListener("scroll", ()=>{ if(menu.classList.contains("open")) position(); }, true);
+  window.addEventListener("resize", ()=>{ if(menu.classList.contains("open")) position(); });
+
+  // reflect a disabled native select on the trigger too
+  new MutationObserver(()=>{ trigger.disabled = select.disabled; trigger.style.opacity = select.disabled ? ".55" : ""; })
+    .observe(select, {attributes:true, attributeFilter:["disabled"]});
+}
+document.addEventListener("click", (e)=>{
+  if(!openCselMenu) return;
+  if(e.target.closest(".csel-menu") || e.target.closest(".csel-trigger")) return;
+  openCselMenu.classList.remove("open");
+  if(openCselMenu._trigger) openCselMenu._trigger.classList.remove("csel-open");
+  openCselMenu = null;
+});
+
+/* ============================================================
    CUSTOM CALENDAR, a dedicated date picker instead of the
    browser's native one, styled to match the rest of the app.
    ============================================================ */
 const CalendarPicker = (function(){
   const pop = document.getElementById("calPopover");
+  const backdrop = document.getElementById("calBackdrop");
+  const titleBtn = document.getElementById("calTitle");
+  const yearGrid = document.getElementById("calYearGrid");
+  const dayGrid = document.getElementById("calGrid");
+  const dowRow = document.getElementById("calDow");
   let targetId = null, viewYear, viewMonth; // viewMonth is 0-indexed
+  let yearsMode = false, yearGridBase = 0;
 
   function parseISO(iso){
     if(!iso) return null;
@@ -4505,26 +4853,26 @@ const CalendarPicker = (function(){
   function toISO(y,m,d){
     return y + "-" + String(m+1).padStart(2,"0") + "-" + String(d).padStart(2,"0");
   }
-  function open(id, anchorEl){
+  function open(id){
     targetId = id;
     const current = parseISO(dv(id));
     const base = current || new Date();
     viewYear = base.getFullYear();
     viewMonth = base.getMonth();
+    yearsMode = false;
     render();
-    const r = anchorEl.getBoundingClientRect();
-    const popW = 280;
-    let left = Math.min(Math.max(8, r.left), window.innerWidth - popW - 8);
-    let top = r.bottom + 8;
-    if(top + 320 > window.innerHeight) top = Math.max(8, r.top - 320 - 8);
-    pop.style.left = left + "px";
-    pop.style.top = top + "px";
+    backdrop.classList.add("open");
     pop.classList.add("open");
   }
-  function close(){ pop.classList.remove("open"); targetId = null; }
+  function close(){ pop.classList.remove("open"); backdrop.classList.remove("open"); targetId = null; yearsMode = false; }
   function render(){
     const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    document.getElementById("calTitle").textContent = monthNames[viewMonth] + " " + viewYear;
+    document.getElementById("calTitleText").textContent = yearsMode ? "Choose a year" : monthNames[viewMonth] + " " + viewYear;
+    titleBtn.classList.toggle("years-open", yearsMode);
+    dowRow.style.display = yearsMode ? "none" : "grid";
+    dayGrid.style.display = yearsMode ? "none" : "grid";
+    yearGrid.style.display = yearsMode ? "grid" : "none";
+    if(yearsMode){ renderYearGrid(); return; }
     const first = new Date(viewYear, viewMonth, 1);
     const startDow = first.getDay();
     const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
@@ -4539,12 +4887,39 @@ const CalendarPicker = (function(){
       if(iso === selectedISO) cls.push("selected");
       cells += `<button type="button" class="${cls.join(" ")}" data-day="${iso}">${d}</button>`;
     }
-    document.getElementById("calGrid").innerHTML = cells;
+    dayGrid.innerHTML = cells;
+  }
+  function renderYearGrid(){
+    const nowYear = new Date().getFullYear();
+    if(!yearGridBase) yearGridBase = viewYear - (viewYear % 12) - 4;
+    let cells = "";
+    for(let y = yearGridBase; y < yearGridBase + 12; y++){
+      const cls = ["cal-year"];
+      if(y === nowYear) cls.push("current");
+      if(y === viewYear) cls.push("selected");
+      cells += `<button type="button" class="${cls.join(" ")}" data-year="${y}">${y}</button>`;
+    }
+    yearGrid.innerHTML = cells;
   }
   function navigate(delta){
+    if(yearsMode){
+      yearGridBase += delta * 12;
+      renderYearGrid();
+      return;
+    }
     viewMonth += delta;
     if(viewMonth < 0){ viewMonth = 11; viewYear--; }
     if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    render();
+  }
+  function toggleYears(){
+    yearsMode = !yearsMode;
+    if(yearsMode) yearGridBase = viewYear - (viewYear % 12) - 4;
+    render();
+  }
+  function pickYear(y){
+    viewYear = y;
+    yearsMode = false;
     render();
   }
   function select(iso){
@@ -4553,10 +4928,15 @@ const CalendarPicker = (function(){
     document.getElementById(targetId).dispatchEvent(new Event("change", {bubbles:true}));
     close();
   }
-  pop.querySelector("#calGrid").addEventListener("click", (e)=>{
+  dayGrid.addEventListener("click", (e)=>{
     const day = e.target.closest("[data-day]");
     if(day) select(day.getAttribute("data-day"));
   });
+  yearGrid.addEventListener("click", (e)=>{
+    const yr = e.target.closest("[data-year]");
+    if(yr) pickYear(parseInt(yr.getAttribute("data-year")));
+  });
+  titleBtn.addEventListener("click", toggleYears);
   pop.querySelectorAll(".cal-nav").forEach(btn=>{
     btn.addEventListener("click", ()=>navigate(parseInt(btn.getAttribute("data-nav"))));
   });
@@ -4565,17 +4945,16 @@ const CalendarPicker = (function(){
     if(targetId){ setDv(targetId, ""); document.getElementById(targetId).dispatchEvent(new Event("change", {bubbles:true})); }
     close();
   });
-  document.addEventListener("click", (e)=>{
-    if(!pop.classList.contains("open")) return;
-    if(e.target.closest("#calPopover") || e.target.closest("[data-cal-target]")) return;
-    close();
+  backdrop.addEventListener("click", close);
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape" && pop.classList.contains("open")) close();
   });
   return {open, close};
 })();
 function closeCalendar(){ CalendarPicker.close(); }
 document.addEventListener("click", (e)=>{
   const trigger = e.target.closest("[data-cal-target]");
-  if(trigger){ CalendarPicker.open(trigger.getAttribute("data-cal-target"), trigger); }
+  if(trigger){ CalendarPicker.open(trigger.getAttribute("data-cal-target")); }
 });
 
 /* ============================================================
@@ -4617,6 +4996,7 @@ const TOUR_STEPS = [
   { view:"ledger", spot:"[data-tour-demo]", title:"Each tile at a glance", body:"Item, borrower, amounts, and a progress bar. Tap Payments to log what's actually been paid, and deposit it straight into a wallet if you like.", needsDemo:true },
   { view:"ledger", spot:"#filterToggle", title:"Filter & sort", body:"Narrow things down by type, status, carrier, borrower, or date, or drag tiles into your own order." },
   { view:"ledger", spot:"[data-tab='borrowers']", title:"Borrowers view", body:"See everyone you've lent to in one list, sorted by who owes the most." },
+  { view:"analytics", spot:"#viewTabs", title:"Analytics", body:"Charts for wallet balance over time, income vs. expense, loan status, top borrowers, and goal progress, all in one place. Use the filters here to narrow it down to a date range." },
   { spot:"#settingsBtn", title:"Settings", body:"Export or import your data, set your currency symbol, replay this tour, or reset everything from here." }
 ];
 let tourStepIdx = 0;
@@ -4838,6 +5218,7 @@ function showTourStep(){
 }
 window.addEventListener("resize", ()=>{
   if(document.getElementById("tourVeil").classList.contains("open")) showTourStep();
+  fitStatValues();
 });
 
 
@@ -4853,6 +5234,12 @@ setTimeout(()=>{
 }, 3100);
 
 (async function boot(){
+  [["fType","pill"],["fStatus","pill"],["fCarrier","pill"],["fBorrower","pill"],["fSort","pill"],
+   ["fiWallet","field"],["wtxWallet","field"],["wtxToWallet","field"],["giWallet","field"],["payWallet","field"]
+  ].forEach(([id,style])=>{
+    const el = document.getElementById(id);
+    if(el) enhanceSelect(el, style);
+  });
   await loadData();
   renderAll();
   applyPersonalization();
