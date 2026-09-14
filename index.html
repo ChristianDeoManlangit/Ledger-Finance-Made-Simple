@@ -1945,6 +1945,7 @@ const GoogleSync = (function(){
   const LAST_SYNCED_KEY = "ledger:sync:lastSyncedAt";
   const FILE_ID_KEY = "ledger:sync:fileId";
   const EMAIL_KEY = "ledger:sync:email";
+  const TOKEN_KEY = "ledger:sync:token"; // {access_token, expires_at} - see loadCache() for why this matters
 
   let tokenClient = null;
   let accessToken = null;
@@ -1980,6 +1981,40 @@ const GoogleSync = (function(){
   function isSignedIn(){ return !!accessToken && Date.now() < tokenExpiresAt; }
   function getEmail(){ return email; }
 
+  /* Access tokens only live ~1 hour, but previously we never actually
+     cached one anywhere, we threw it away on every page load and relied
+     entirely on a fresh silent network reauth to get a new one. That
+     silent reauth goes through a hidden Google iframe which a lot of
+     browsers (Safari, Firefox, and increasingly Chrome) block by default
+     as third-party cookies, so on those browsers a refresh looked
+     exactly like being signed out even seconds after signing in.
+     Caching the still-valid token means most refreshes need no network
+     round-trip to Google at all, and only need silent reauth once the
+     cached token actually expires. */
+  function saveToken(){
+    try{
+      if(accessToken && tokenExpiresAt > Date.now()){
+        localStorage.setItem(TOKEN_KEY, JSON.stringify({ access_token: accessToken, expires_at: tokenExpiresAt }));
+      }
+    }catch(e){}
+  }
+  function loadToken(){
+    try{
+      const raw = localStorage.getItem(TOKEN_KEY);
+      if(!raw) return false;
+      const parsed = JSON.parse(raw);
+      if(parsed && parsed.access_token && parsed.expires_at > Date.now() + 15000){
+        accessToken = parsed.access_token;
+        tokenExpiresAt = parsed.expires_at;
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+  function clearToken(){
+    try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+  }
+
   function loadCache(){
     try{ fileId = localStorage.getItem(FILE_ID_KEY) || null; }catch(e){}
     try{ email = localStorage.getItem(EMAIL_KEY) || null; }catch(e){}
@@ -1996,6 +2031,7 @@ const GoogleSync = (function(){
       localStorage.removeItem(EMAIL_KEY);
       localStorage.removeItem(LAST_SYNCED_KEY);
     }catch(e){}
+    clearToken();
     fileId = null;
     email = null;
   }
@@ -2013,6 +2049,7 @@ const GoogleSync = (function(){
     if(res.status === 401){
       // Token expired mid-flight, force a fresh one and let the caller retry.
       accessToken = null; tokenExpiresAt = 0;
+      clearToken();
       throw new Error("auth-expired");
     }
     if(!res.ok){
@@ -2030,6 +2067,10 @@ const GoogleSync = (function(){
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
+      // FedCM is Google's newer, browser-mediated sign-in path that
+      // doesn't depend on third-party cookies the way the old silent
+      // iframe did, so it's more likely to succeed for silent reauth.
+      use_fedcm_for_prompt: true,
       callback: ()=>{} // overridden per-request below
     });
     return tokenClient;
@@ -2048,6 +2089,7 @@ const GoogleSync = (function(){
           if(resp && resp.access_token){
             accessToken = resp.access_token;
             tokenExpiresAt = Date.now() + ((resp.expires_in||3600) * 1000) - 30000;
+            saveToken();
             resolve(resp);
           } else {
             reject(new Error((resp && resp.error) || "sign-in-failed"));
@@ -2220,10 +2262,42 @@ const GoogleSync = (function(){
      load (e.g. cookies not yet warmed, or the person just signed into
      Google in another tab) may become available shortly after. */
   let autoConnectRetryWired = false;
+  function waitForGis(timeoutMs){
+    return new Promise((resolve, reject)=>{
+      if(typeof google !== "undefined" && google.accounts && google.accounts.oauth2){ resolve(); return; }
+      const iv = setInterval(()=>{
+        if(typeof google !== "undefined" && google.accounts && google.accounts.oauth2){
+          clearInterval(iv); clearTimeout(to); resolve();
+        }
+      }, 200);
+      const to = setTimeout(()=>{ clearInterval(iv); reject(new Error("gis-not-loaded")); }, timeoutMs || 8000);
+    });
+  }
   async function tryAutoConnect(){
     loadCache();
     if(!isConfigured() || !fileId) return false;
+    // Fast path: if we still have a valid cached access token from earlier
+    // this session (or an earlier tab), use it directly with no network
+    // round-trip to Google at all and no dependency on the Google
+    // Identity Services script even having loaded yet, this is what
+    // actually keeps you signed in across a refresh. Silent reauth below
+    // is only the fallback once that cached token has genuinely expired
+    // (~1 hour) or there wasn't one cached.
+    if(loadToken()){
+      try{
+        await fetchEmail();
+        const changed = await pullAndMerge();
+        startPolling();
+        setStatus("synced");
+        if(changed && typeof renderAll === "function") renderAll();
+        return true;
+      }catch(e){
+        accessToken = null; tokenExpiresAt = 0; clearToken();
+        // fall through to silent reauth below
+      }
+    }
     try{
+      await waitForGis();
       await requestTokenSilentWithRetry(3);
       await fetchEmail();
       const changed = await pullAndMerge();
@@ -5387,15 +5461,10 @@ setTimeout(()=>{
   }
   GoogleSync.onStatusChange(refreshSyncUI);
   refreshSyncUI(GoogleSync.getStatus());
-  // Wait for the Google Identity Services script to finish loading
-  // before trying a silent reconnect on returning devices.
-  const gisReady = setInterval(()=>{
-    if(typeof google !== "undefined" && google.accounts && google.accounts.oauth2){
-      clearInterval(gisReady);
-      GoogleSync.tryAutoConnect();
-    }
-  }, 200);
-  setTimeout(()=>clearInterval(gisReady), 8000);
+  // tryAutoConnect() handles waiting for the Google Identity Services
+  // script itself, internally, and only if it actually needs it (a
+  // cached, still-valid access token skips that wait entirely).
+  GoogleSync.tryAutoConnect();
 })();
 
 })();
