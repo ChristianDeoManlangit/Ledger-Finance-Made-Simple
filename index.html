@@ -355,7 +355,7 @@ a{color:inherit;}
 
 /* Month navigation on the "To pay this/in month" tile: arrow buttons for
    mouse/keyboard, plus swipe-to-change-month for touch (wired up once via
-   delegation in boot(), see wireDueMonthSwipe()). touch-action:pan-y lets
+   delegation in boot(), see wireDueMonthNav()). touch-action:pan-y lets
    vertical page scroll pass through untouched while we handle horizontal
    swipes ourselves. */
 .stat-tile.duesoon{touch-action:pan-y;}
@@ -2808,14 +2808,20 @@ function resetDueMonth(){
   dueMonthOffset = 0;
   renderSummary();
 }
-/* One-time delegated swipe handling for the due-month tile, wired up in
-   boot(). Delegated on #summary (rather than re-attached on every render)
-   since renderLedgerSummary() replaces that element's innerHTML on every
-   render. Horizontal swipe changes month; a much-larger vertical
+/* One-time delegated click + swipe handling for the due-month tile, wired
+   up in boot(). Delegated on #summary (rather than re-attached on every
+   render, or via inline onclick, which the file's IIFE scoping rules out
+   anyway) since renderLedgerSummary() replaces that element's innerHTML on
+   every render. Horizontal swipe changes month; a much-larger vertical
    component is treated as a page scroll and ignored. */
-function wireDueMonthSwipe(){
+function wireDueMonthNav(){
   const root = document.getElementById("summary");
   if(!root) return;
+  root.addEventListener("click", (e)=>{
+    const navBtn = e.target.closest("[data-due-nav]");
+    if(navBtn){ shiftDueMonth(parseInt(navBtn.getAttribute("data-due-nav"), 10)); return; }
+    if(e.target.closest("[data-due-reset]")){ resetDueMonth(); }
+  });
   let startX = 0, startY = 0, tracking = false;
   root.addEventListener("touchstart", (e)=>{
     const tile = e.target.closest(".stat-tile.duesoon");
@@ -2873,16 +2879,16 @@ function renderLedgerSummary(){
       <div class="stat-icon"><svg class="icon"><use href="#i-calendar"/></svg></div>
       <div class="due-nav-arrows">
         <button type="button" class="due-nav-arrow" aria-label="Previous month" title="Previous month"
-          onclick="shiftDueMonth(-1)" ${dueMonthOffset<=DUE_MONTH_MIN_OFFSET?"disabled":""}>
+          data-due-nav="-1" ${dueMonthOffset<=DUE_MONTH_MIN_OFFSET?"disabled":""}>
           <svg class="icon"><use href="#i-chevron-left"/></svg>
         </button>
         <button type="button" class="due-nav-arrow" aria-label="Next month" title="Next month"
-          onclick="shiftDueMonth(1)" ${dueMonthOffset>=DUE_MONTH_MAX_OFFSET?"disabled":""}>
+          data-due-nav="1" ${dueMonthOffset>=DUE_MONTH_MAX_OFFSET?"disabled":""}>
           <svg class="icon"><use href="#i-chevron-right"/></svg>
         </button>
       </div>
       <div class="stat-label${dueMonthOffset!==0?" is-shifted":""}"
-        ${dueMonthOffset!==0?`onclick="resetDueMonth()" title="Back to this month"`:""}>${dueLabel}</div>
+        ${dueMonthOffset!==0?`data-due-reset title="Back to this month"`:""}>${dueLabel}</div>
       <div class="stat-value">${fmt(dueThisMonth.total)}</div>
       <div class="stat-foot">${dueFoot}</div>
     </div>
@@ -5560,7 +5566,7 @@ setTimeout(()=>{
   await loadData();
   renderAll();
   applyPersonalization();
-  wireDueMonthSwipe();
+  wireDueMonthNav();
   if(!state.settings.onboardingDone){
     openOnboarding();
   }
