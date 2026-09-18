@@ -358,7 +358,7 @@ a{color:inherit;}
    delegation in boot(), see wireDueMonthNav()). touch-action:pan-y lets
    vertical page scroll pass through untouched while we handle horizontal
    swipes ourselves. */
-.stat-tile.duesoon{touch-action:pan-y;}
+.stat-tile.duesoon{touch-action:pan-y; cursor:pointer;}
 .due-nav-arrows{position:absolute; top:16px; right:16px; display:flex; gap:4px;}
 .due-nav-arrow{
   width:24px; height:24px; border-radius:7px; border:1px solid var(--border);
@@ -370,11 +370,17 @@ a{color:inherit;}
 .due-nav-arrow:hover{background:var(--teal-tint); color:var(--teal);}
 .due-nav-arrow:active{transform:scale(.9);}
 .due-nav-arrow:disabled{opacity:.35; cursor:default; pointer-events:none;}
-.stat-tile.duesoon .stat-label{cursor:default;}
-.stat-tile.duesoon .stat-label.is-shifted{cursor:pointer; text-decoration:underline dotted; text-underline-offset:2px;}
+.stat-tile.duesoon .stat-label{width:fit-content;}
+.stat-tile.duesoon .stat-label:hover{text-decoration:underline dotted; text-underline-offset:2px;}
 @media (max-width:380px){
   .due-nav-arrows{top:12px; right:12px;}
 }
+
+/* Due-month breakdown modal: reuses the pl-row/pl-summary skeleton from
+   the Payments modal so it matches the app's existing list styling. */
+.due-sort-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+.due-sort-row .due-sort-label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+.due-row-name{font-size:11.5px; color:var(--ink-faint);}
 
 /* ---- Tabs ---- */
 .tabs{
@@ -1548,6 +1554,44 @@ input[list]::-webkit-list-button{ display:none !important; }
     </div>
     <div class="modal-foot">
       <button class="btn primary full" id="paymentDone">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Due-Month Breakdown Modal -->
+<div class="overlay" id="dueOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="dueModalTitle">To pay this month</h2>
+      <button class="icon-btn" id="dueClose" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="pl-summary">
+        <div class="pls-block">
+          <div class="l">Total due</div>
+          <div class="v" id="dueModalTotal">₱0</div>
+        </div>
+        <div class="pls-block">
+          <div class="l">Bills</div>
+          <div class="v" id="dueModalCount">0</div>
+        </div>
+      </div>
+      <div class="due-sort-row">
+        <span class="due-sort-label">Sort by</span>
+        <select id="dueSort">
+          <option value="due-asc">Due date (soonest)</option>
+          <option value="due-desc">Due date (latest)</option>
+          <option value="amount-desc">Highest amount</option>
+          <option value="amount-asc">Lowest amount</option>
+          <option value="created-desc">Newest first</option>
+          <option value="created-asc">Oldest first</option>
+          <option value="name-asc">Name A–Z</option>
+        </select>
+      </div>
+      <div class="pl-log" id="dueModalList" style="max-height:340px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary full" id="dueDone">Done</button>
     </div>
   </div>
 </div>
@@ -2803,24 +2847,21 @@ function shiftDueMonth(delta){
   dueMonthOffset = Math.max(DUE_MONTH_MIN_OFFSET, Math.min(DUE_MONTH_MAX_OFFSET, dueMonthOffset + delta));
   renderSummary();
 }
-function resetDueMonth(){
-  if(dueMonthOffset === 0) return;
-  dueMonthOffset = 0;
-  renderSummary();
-}
 /* One-time delegated click + swipe handling for the due-month tile, wired
    up in boot(). Delegated on #summary (rather than re-attached on every
    render, or via inline onclick, which the file's IIFE scoping rules out
    anyway) since renderLedgerSummary() replaces that element's innerHTML on
    every render. Horizontal swipe changes month; a much-larger vertical
-   component is treated as a page scroll and ignored. */
+   component is treated as a page scroll and ignored. Clicking the tile
+   itself (anywhere but the arrows) opens the full breakdown for whichever
+   month is currently shown. */
 function wireDueMonthNav(){
   const root = document.getElementById("summary");
   if(!root) return;
   root.addEventListener("click", (e)=>{
     const navBtn = e.target.closest("[data-due-nav]");
     if(navBtn){ shiftDueMonth(parseInt(navBtn.getAttribute("data-due-nav"), 10)); return; }
-    if(e.target.closest("[data-due-reset]")){ resetDueMonth(); }
+    if(e.target.closest(".stat-tile.duesoon")){ openDueModal(monthKeyFromOffset(dueMonthOffset)); }
   });
   let startX = 0, startY = 0, tracking = false;
   root.addEventListener("touchstart", (e)=>{
@@ -2841,6 +2882,75 @@ function wireDueMonthNav(){
     }
   }, {passive:true});
 }
+/* ============================================================
+   DUE-MONTH BREAKDOWN MODAL
+   ============================================================ */
+let dueModalYm = null;
+const dueOverlay = document.getElementById("dueOverlay");
+function dueEntriesForMonth(ym){
+  const entries = [];
+  state.transactions.forEach(t=>{
+    if(isComplete(t) || !t.due) return;
+    const due = dueDateInMonth(t, ym);
+    if(due) entries.push({t, due, amt: Math.min(t.split, remaining(t))});
+  });
+  return entries;
+}
+function sortDueEntries(entries, key){
+  const sorted = entries.slice();
+  const cmp = {
+    "due-asc": (a,b)=> a.due < b.due ? -1 : a.due > b.due ? 1 : 0,
+    "due-desc": (a,b)=> a.due > b.due ? -1 : a.due < b.due ? 1 : 0,
+    "amount-desc": (a,b)=> b.amt - a.amt,
+    "amount-asc": (a,b)=> a.amt - b.amt,
+    "created-desc": (a,b)=> a.t.date < b.t.date ? 1 : a.t.date > b.t.date ? -1 : 0,
+    "created-asc": (a,b)=> a.t.date < b.t.date ? -1 : a.t.date > b.t.date ? 1 : 0,
+    "name-asc": (a,b)=> a.t.name.localeCompare(b.t.name),
+  }[key] || null;
+  if(cmp) sorted.sort(cmp);
+  return sorted;
+}
+function renderDueModalList(){
+  if(!dueModalYm) return;
+  const entries = dueEntriesForMonth(dueModalYm);
+  const total = round2(entries.reduce((s,e)=>s+e.amt,0));
+  document.getElementById("dueModalTotal").textContent = fmt(total);
+  document.getElementById("dueModalCount").textContent = entries.length;
+  const listEl = document.getElementById("dueModalList");
+  if(!entries.length){
+    listEl.innerHTML = emptyState("calendar", "Nothing due", `No bills are scheduled for ${monthLabel(dueModalYm)}.`, false);
+    return;
+  }
+  const sortKey = document.getElementById("dueSort").value || "due-asc";
+  const sorted = sortDueEntries(entries, sortKey);
+  listEl.innerHTML = sorted.map(({t, due, amt})=>`
+    <div class="pl-row due-row">
+      ${avatarHtml(t.name)}
+      <div class="pl-main">
+        <div class="pl-amt">${fmt(amt)} <span style="font-weight:500;color:var(--ink-faint);font-size:11.5px;">${esc(t.item)}</span></div>
+        <div class="due-row-name">${esc(t.name)}</div>
+        <div class="pl-date">Due ${fmtDate(due)}</div>
+      </div>
+    </div>`
+  ).join("");
+}
+function openDueModal(ym){
+  dueModalYm = ym;
+  document.getElementById("dueModalTitle").textContent = ym === currentMonthKey() ? "To pay this month" : `To pay in ${monthLabel(ym)}`;
+  document.getElementById("dueSort").value = "due-asc";
+  renderDueModalList();
+  dueOverlay.classList.add("open");
+  updateScrollLock();
+}
+function closeDueModal(){
+  dueOverlay.classList.remove("open");
+  dueModalYm = null;
+  updateScrollLock();
+}
+document.getElementById("dueClose").addEventListener("click", closeDueModal);
+document.getElementById("dueDone").addEventListener("click", closeDueModal);
+dueOverlay.addEventListener("click", (e)=>{ if(e.target === dueOverlay) closeDueModal(); });
+document.getElementById("dueSort").addEventListener("change", renderDueModalList);
 function renderLedgerSummary(){
   const all = state.transactions;
   const totalBill = round2(all.reduce((s,t)=>s+t.bill,0));
@@ -2887,8 +2997,7 @@ function renderLedgerSummary(){
           <svg class="icon"><use href="#i-chevron-right"/></svg>
         </button>
       </div>
-      <div class="stat-label${dueMonthOffset!==0?" is-shifted":""}"
-        ${dueMonthOffset!==0?`data-due-reset title="Back to this month"`:""}>${dueLabel}</div>
+      <div class="stat-label" title="View this month's bills">${dueLabel}</div>
       <div class="stat-value">${fmt(dueThisMonth.total)}</div>
       <div class="stat-foot">${dueFoot}</div>
     </div>
@@ -5000,7 +5109,7 @@ document.addEventListener("keydown", (e)=>{
   if(e.key === "Escape"){
     if(document.getElementById("calPopover").classList.contains("open")){ closeCalendar(); return; }
     document.getElementById("searchBox").classList.remove("open");
-    [txOverlay, deleteOverlay, importOverlay, settingsOverlay, paymentOverlay, walletOverlay, walletDeleteOverlay, wtxOverlay, goalOverlay, goalDeleteOverlay, goalContribOverlay].forEach(o=>o.classList.remove("open"));
+    [txOverlay, deleteOverlay, importOverlay, settingsOverlay, paymentOverlay, walletOverlay, walletDeleteOverlay, wtxOverlay, goalOverlay, goalDeleteOverlay, goalContribOverlay, dueOverlay].forEach(o=>o.classList.remove("open"));
     if(openMenuId) closeAllMenus();
     return;
   }
@@ -5558,7 +5667,8 @@ setTimeout(()=>{
 
 (async function boot(){
   [["fType","pill"],["fStatus","pill"],["fCarrier","pill"],["fBorrower","pill"],["fSort","pill"],
-   ["fiWallet","field"],["wtxWallet","field"],["wtxToWallet","field"],["giWallet","field"],["payWallet","field"]
+   ["fiWallet","field"],["wtxWallet","field"],["wtxToWallet","field"],["giWallet","field"],["payWallet","field"],
+   ["dueSort","pill"]
   ].forEach(([id,style])=>{
     const el = document.getElementById(id);
     if(el) enhanceSelect(el, style);
