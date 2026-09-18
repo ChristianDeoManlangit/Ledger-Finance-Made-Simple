@@ -380,7 +380,21 @@ a{color:inherit;}
    the Payments modal so it matches the app's existing list styling. */
 .due-sort-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
 .due-sort-row .due-sort-label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
-.due-row-name{font-size:11.5px; color:var(--ink-faint);}
+.due-row-body{flex:1; min-width:0;}
+.due-row-top{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+.due-row-title{font-weight:700; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.due-row-cost{font-weight:700; font-size:14px; font-variant-numeric:tabular-nums; flex-shrink:0;}
+.due-row-sub{font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
+.due-vis-toggle{
+  width:28px; height:28px; border-radius:50%; border:none; background:none;
+  color:var(--ink-faint); cursor:pointer; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; transition:background .15s var(--ease), color .15s var(--ease);
+}
+.due-vis-toggle:hover{background:var(--surface-sunk); color:var(--ink);}
+.due-vis-toggle .icon{width:16px; height:16px;}
+.due-row.is-excluded{opacity:.5;}
+.due-row.is-excluded .due-row-cost{text-decoration:line-through;}
+.due-row.is-excluded .due-vis-toggle{color:var(--loss); opacity:1;}
 
 /* ---- Tabs ---- */
 .tabs{
@@ -1298,6 +1312,8 @@ input[list]::-webkit-list-button{ display:none !important; }
 <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-3 5 3 5H5"/></symbol>
 <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
 <symbol id="i-bar-chart" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a20.3 20.3 0 015.06-5.94M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 8 11 8a20.3 20.3 0 01-2.16 3.19M14.12 14.12a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
 </defs>
 </svg>
 
@@ -2886,13 +2902,21 @@ function wireDueMonthNav(){
    DUE-MONTH BREAKDOWN MODAL
    ============================================================ */
 let dueModalYm = null;
+/* Which due entries the user has toggled off from this modal's own total,
+   purely as an ad-hoc "what if I leave this one out" view — it never
+   touches the real transaction data or the dashboard tile's total.
+   Keyed by "transactionId:YYYY-MM" so the same transaction can be
+   excluded in one month's view without affecting another. Deliberately
+   in-memory only (not persisted) since it's a quick scratchpad, not data. */
+let dueExcluded = new Set();
+function dueKey(id, ym){ return id + ":" + ym; }
 const dueOverlay = document.getElementById("dueOverlay");
 function dueEntriesForMonth(ym){
   const entries = [];
   state.transactions.forEach(t=>{
     if(isComplete(t) || !t.due) return;
     const due = dueDateInMonth(t, ym);
-    if(due) entries.push({t, due, amt: Math.min(t.split, remaining(t))});
+    if(due) entries.push({t, due, amt: Math.min(t.split, remaining(t)), excluded: dueExcluded.has(dueKey(t.id, ym))});
   });
   return entries;
 }
@@ -2913,8 +2937,8 @@ function sortDueEntries(entries, key){
 function renderDueModalList(){
   if(!dueModalYm) return;
   const entries = dueEntriesForMonth(dueModalYm);
-  const total = round2(entries.reduce((s,e)=>s+e.amt,0));
-  document.getElementById("dueModalTotal").textContent = fmt(total);
+  const visibleTotal = round2(entries.filter(e=>!e.excluded).reduce((s,e)=>s+e.amt,0));
+  document.getElementById("dueModalTotal").textContent = fmt(visibleTotal);
   document.getElementById("dueModalCount").textContent = entries.length;
   const listEl = document.getElementById("dueModalList");
   if(!entries.length){
@@ -2923,14 +2947,19 @@ function renderDueModalList(){
   }
   const sortKey = document.getElementById("dueSort").value || "due-asc";
   const sorted = sortDueEntries(entries, sortKey);
-  listEl.innerHTML = sorted.map(({t, due, amt})=>`
-    <div class="pl-row due-row">
-      ${avatarHtml(t.name)}
-      <div class="pl-main">
-        <div class="pl-amt">${fmt(amt)} <span style="font-weight:500;color:var(--ink-faint);font-size:11.5px;">${esc(t.item)}</span></div>
-        <div class="due-row-name">${esc(t.name)}</div>
-        <div class="pl-date">Due ${fmtDate(due)}</div>
+  listEl.innerHTML = sorted.map(({t, due, amt, excluded})=>`
+    <div class="pl-row due-row${excluded?" is-excluded":""}">
+      <div class="due-row-body">
+        <div class="due-row-top">
+          <div class="due-row-title">${esc(t.item)}</div>
+          <div class="due-row-cost">${fmt(amt)}</div>
+        </div>
+        <div class="due-row-sub">${esc(t.name)} &middot; Due ${fmtDate(due)}</div>
       </div>
+      <button type="button" class="due-vis-toggle" data-due-toggle="${t.id}"
+        aria-label="${excluded?"Include in total":"Exclude from total"}" title="${excluded?"Include in total":"Exclude from total"}">
+        <svg class="icon"><use href="#${excluded?"i-eye-off":"i-eye"}"/></svg>
+      </button>
     </div>`
   ).join("");
 }
@@ -2951,6 +2980,13 @@ document.getElementById("dueClose").addEventListener("click", closeDueModal);
 document.getElementById("dueDone").addEventListener("click", closeDueModal);
 dueOverlay.addEventListener("click", (e)=>{ if(e.target === dueOverlay) closeDueModal(); });
 document.getElementById("dueSort").addEventListener("change", renderDueModalList);
+document.getElementById("dueModalList").addEventListener("click", (e)=>{
+  const btn = e.target.closest("[data-due-toggle]");
+  if(!btn || !dueModalYm) return;
+  const key = dueKey(btn.getAttribute("data-due-toggle"), dueModalYm);
+  if(dueExcluded.has(key)) dueExcluded.delete(key); else dueExcluded.add(key);
+  renderDueModalList();
+});
 function renderLedgerSummary(){
   const all = state.transactions;
   const totalBill = round2(all.reduce((s,t)=>s+t.bill,0));
