@@ -353,6 +353,29 @@ a{color:inherit;}
 .stat-value.neg{color:var(--loss);}
 .stat-foot{font-size:12px; color:var(--ink-faint); margin-top:6px;}
 
+/* Month navigation on the "To pay this/in month" tile: arrow buttons for
+   mouse/keyboard, plus swipe-to-change-month for touch (wired up once via
+   delegation in boot(), see wireDueMonthSwipe()). touch-action:pan-y lets
+   vertical page scroll pass through untouched while we handle horizontal
+   swipes ourselves. */
+.stat-tile.duesoon{touch-action:pan-y;}
+.due-nav-arrows{position:absolute; top:16px; right:16px; display:flex; gap:4px;}
+.due-nav-arrow{
+  width:24px; height:24px; border-radius:7px; border:1px solid var(--border);
+  background:var(--surface-sunk); color:var(--ink-soft);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:background .15s var(--ease), color .15s var(--ease), transform .1s var(--ease);
+}
+.due-nav-arrow .icon{width:14px; height:14px;}
+.due-nav-arrow:hover{background:var(--teal-tint); color:var(--teal);}
+.due-nav-arrow:active{transform:scale(.9);}
+.due-nav-arrow:disabled{opacity:.35; cursor:default; pointer-events:none;}
+.stat-tile.duesoon .stat-label{cursor:default;}
+.stat-tile.duesoon .stat-label.is-shifted{cursor:pointer; text-decoration:underline dotted; text-underline-offset:2px;}
+@media (max-width:380px){
+  .due-nav-arrows{top:12px; right:12px;}
+}
+
 /* ---- Tabs ---- */
 .tabs{
   display:flex;
@@ -2770,6 +2793,48 @@ function renderWalletSummary(){
     </div>
   `;
 }
+/* Offset (in months) of the currently-viewed month on the "To pay this
+   month" tile, relative to the real current month. 0 = this month.
+   Deliberately module-level (not in `state`) since it's just a view
+   position, not data worth persisting or syncing. */
+let dueMonthOffset = 0;
+const DUE_MONTH_MIN_OFFSET = -60, DUE_MONTH_MAX_OFFSET = 60;
+function shiftDueMonth(delta){
+  dueMonthOffset = Math.max(DUE_MONTH_MIN_OFFSET, Math.min(DUE_MONTH_MAX_OFFSET, dueMonthOffset + delta));
+  renderSummary();
+}
+function resetDueMonth(){
+  if(dueMonthOffset === 0) return;
+  dueMonthOffset = 0;
+  renderSummary();
+}
+/* One-time delegated swipe handling for the due-month tile, wired up in
+   boot(). Delegated on #summary (rather than re-attached on every render)
+   since renderLedgerSummary() replaces that element's innerHTML on every
+   render. Horizontal swipe changes month; a much-larger vertical
+   component is treated as a page scroll and ignored. */
+function wireDueMonthSwipe(){
+  const root = document.getElementById("summary");
+  if(!root) return;
+  let startX = 0, startY = 0, tracking = false;
+  root.addEventListener("touchstart", (e)=>{
+    const tile = e.target.closest(".stat-tile.duesoon");
+    if(!tile || e.touches.length !== 1) return;
+    tracking = true;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, {passive:true});
+  root.addEventListener("touchend", (e)=>{
+    if(!tracking) return;
+    tracking = false;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if(Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      shiftDueMonth(dx < 0 ? 1 : -1);
+    }
+  }, {passive:true});
+}
 function renderLedgerSummary(){
   const all = state.transactions;
   const totalBill = round2(all.reduce((s,t)=>s+t.bill,0));
@@ -2778,7 +2843,12 @@ function renderLedgerSummary(){
   const outstanding = round2(all.filter(t=>!isComplete(t)).reduce((s,t)=>s+remaining(t),0));
   const activeCount = all.filter(t=>statusOf(t)==="active").length;
   const overdueCount = all.filter(t=>statusOf(t)==="overdue").length;
-  const dueThisMonth = amountDueThisMonth();
+  const dueYm = monthKeyFromOffset(dueMonthOffset);
+  const dueThisMonth = amountDueInMonth(dueYm);
+  const dueLabel = dueMonthOffset === 0 ? "To pay this month" : `To pay in ${monthLabel(dueYm)}`;
+  const dueFoot = dueThisMonth.count
+    ? `${dueThisMonth.count} installment${dueThisMonth.count===1?"":"s"} due in ${monthLabel(dueYm)}`
+    : `Nothing due in ${monthLabel(dueYm)}`;
 
   document.getElementById("summary").innerHTML = `
     <div class="stat-tile lent">
@@ -2801,9 +2871,20 @@ function renderLedgerSummary(){
     </div>
     <div class="stat-tile duesoon">
       <div class="stat-icon"><svg class="icon"><use href="#i-calendar"/></svg></div>
-      <div class="stat-label">To pay this month</div>
+      <div class="due-nav-arrows">
+        <button type="button" class="due-nav-arrow" aria-label="Previous month" title="Previous month"
+          onclick="shiftDueMonth(-1)" ${dueMonthOffset<=DUE_MONTH_MIN_OFFSET?"disabled":""}>
+          <svg class="icon"><use href="#i-chevron-left"/></svg>
+        </button>
+        <button type="button" class="due-nav-arrow" aria-label="Next month" title="Next month"
+          onclick="shiftDueMonth(1)" ${dueMonthOffset>=DUE_MONTH_MAX_OFFSET?"disabled":""}>
+          <svg class="icon"><use href="#i-chevron-right"/></svg>
+        </button>
+      </div>
+      <div class="stat-label${dueMonthOffset!==0?" is-shifted":""}"
+        ${dueMonthOffset!==0?`onclick="resetDueMonth()" title="Back to this month"`:""}>${dueLabel}</div>
       <div class="stat-value">${fmt(dueThisMonth.total)}</div>
-      <div class="stat-foot">${dueThisMonth.count ? `${dueThisMonth.count} installment${dueThisMonth.count===1?"":"s"} due in ${monthLabel(currentMonthKey())}` : `Nothing due in ${monthLabel(currentMonthKey())}`}</div>
+      <div class="stat-foot">${dueFoot}</div>
     </div>
   `;
 }
@@ -2811,21 +2892,44 @@ function renderLedgerSummary(){
    due date falls within the calendar month we're in right now. Purely
    informational, it just answers "what am I expecting to collect this month". */
 function currentMonthKey(){
-  const now = new Date();
-  return now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  return monthKeyFromOffset(0);
 }
-function amountDueThisMonth(){
-  const ym = currentMonthKey();
+/* "This month" plus/minus `offset` months, as a "YYYY-MM" key. Used to let
+   the "To pay this month" tile page through neighboring months. */
+function monthKeyFromOffset(offset){
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+}
+/* Unlike currentDueDate() (which only ever resolves "today"'s applicable
+   installment), this checks every scheduled installment date for the
+   transaction and returns whichever one, if any, falls in the given
+   calendar month — so it works for months in the future or past too.
+   Since each installment is spaced exactly a month apart, at most one
+   shift can ever land in a given calendar month. */
+function dueDateInMonth(t, ym){
+  if(!t.due) return null;
+  const totalInstallments = Math.max(1, t.installmentsTotal || 1);
+  const maxShift = totalInstallments - 1;
+  for(let s=0; s<=maxShift; s++){
+    const d = shiftDueDate(t.due, s);
+    if(d.slice(0,7) === ym) return d;
+  }
+  return null;
+}
+function amountDueInMonth(ym){
   let total = 0, count = 0;
   state.transactions.forEach(t=>{
     if(isComplete(t) || !t.due) return;
-    const due = currentDueDate(t);
-    if(due && due.slice(0,7) === ym){
+    if(dueDateInMonth(t, ym)){
       total += Math.min(t.split, remaining(t));
       count++;
     }
   });
   return {total: round2(total), count};
+}
+function amountDueThisMonth(){
+  return amountDueInMonth(currentMonthKey());
 }
 
 /* ============================================================
@@ -5456,6 +5560,7 @@ setTimeout(()=>{
   await loadData();
   renderAll();
   applyPersonalization();
+  wireDueMonthSwipe();
   if(!state.settings.onboardingDone){
     openOnboarding();
   }
