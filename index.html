@@ -2608,12 +2608,32 @@ function gainOf(t){ return round2(t.requested - t.bill); }
 function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
 function paidCount(t){ return (t.payments||[]).length; }
 function paidAmount(t){ return round2((t.payments||[]).reduce((s,p)=>s+p.amount,0)); }
+/* How many FULL installments the money paid so far actually covers, based
+   on amount rather than how many separate payments were logged. Using
+   payments.length breaks the moment a payment isn't exactly one split:
+   a partial payment would still count as "one installment done" even
+   though it isn't, and covering two installments in a single payment
+   would only count as one. Dividing the total paid by the split size and
+   rounding down reflects what's actually been settled either way. Falls
+   back to counting payments if there's no split amount to divide by. */
+function installmentsSettled(t){
+  if(!t.split || t.split <= 0) return paidCount(t);
+  const totalInstallments = Math.max(1, t.installmentsTotal || 1);
+  return Math.min(Math.floor((paidAmount(t) + 0.005) / t.split), totalInstallments);
+}
 function remaining(t){ return Math.max(0, round2(t.requested - paidAmount(t))); }
 function isComplete(t){ return paidAmount(t) >= t.requested - 0.005; }
+/* Parses an ISO "YYYY-MM-DD" string as a local-midnight Date, unlike
+   `new Date(iso)` which parses date-only strings as UTC midnight, then
+   silently shifts to the wrong calendar day once you read it back with
+   local getters (getFullYear/getMonth/getDate) in a timezone behind UTC. */
+function parseLocalDate(iso){
+  const [y,m,d] = iso.split("-").map(Number);
+  return new Date(y, m-1, d);
+}
 /* Shifts an ISO "YYYY-MM-DD" date forward by `months` whole months,
    clamping the day to the last day of the target month (e.g. Jan 31 + 1mo = Feb 28/29). */
-function shiftDueDate(iso, months){
-  const [y,m,d] = iso.split("-").map(Number);
+function shiftDueDate(iso, months){  const [y,m,d] = iso.split("-").map(Number);
   let total = (m - 1) + months;
   const ty = y + Math.floor(total/12);
   const tm = ((total%12)+12)%12;
@@ -2621,19 +2641,18 @@ function shiftDueDate(iso, months){
   const td = Math.min(d, daysInTarget);
   return ty + "-" + String(tm+1).padStart(2,"0") + "-" + String(td).padStart(2,"0");
 }
-/* A transaction's due date recurs monthly rather than staying fixed: with N
-   installments, due dates are set, set+1mo, set+2mo, ... up to N-1 months out.
-   Only the date that has actually arrived is ever surfaced, so the schedule
-   isn't shown in advance, it just rolls forward once each prior date passes. */
+/* A transaction's due date recurs monthly: with N installments, due dates
+   are set, set+1mo, set+2mo, ... up to N-1 months out. This resolves to
+   the due date of the NEXT installment still owed, based on how many
+   payments have actually been recorded, not just on calendar rollover.
+   That's the fix: the old version advanced purely by today's date, so
+   once a due date passed it stayed "overdue" even if that month was
+   already paid, since it never looked at payments at all. */
 function currentDueDate(t){
   if(!t.due) return t.due;
   const totalInstallments = Math.max(1, t.installmentsTotal || 1);
   const maxShift = totalInstallments - 1;
-  const today = todayStr();
-  let shift = 0;
-  while(shift < maxShift && shiftDueDate(t.due, shift+1) <= today){
-    shift++;
-  }
+  const shift = Math.min(installmentsSettled(t), maxShift);
   return shiftDueDate(t.due, shift);
 }
 function isOverdue(t){ return !isComplete(t) && t.due && currentDueDate(t) < todayStr(); }
@@ -2715,7 +2734,7 @@ function goalSaved(g){
 function goalRemaining(g){ return Math.max(0, round2((g.targetAmount||0) - goalSaved(g))); }
 function goalPct(g){ return g.targetAmount>0 ? Math.min(100, Math.round((goalSaved(g)/g.targetAmount)*100)) : 0; }
 function goalIsComplete(g){ return g.targetAmount>0 && goalSaved(g) >= g.targetAmount - 0.005; }
-function goalIsOverdue(g){ return !goalIsComplete(g) && g.targetDate && new Date(g.targetDate) < new Date(new Date().toDateString()); }
+function goalIsOverdue(g){ return !goalIsComplete(g) && g.targetDate && g.targetDate < todayStr(); }
 /* Contributions funded from a wallet moved real money out of that wallet's
    balance, but it's still the person's money, just earmarked, so it still
    counts toward net worth, the same way a wallet-funded loan's outstanding
@@ -2727,6 +2746,10 @@ function walletFundedGoalsSaved(){
 /* ============================================================
    FILTERING / SORTING
    ============================================================ */
+function hasActiveTxFilters(){
+  const f = state.filters;
+  return !!(f.search || f.type || f.status || f.carrier || (state.filterByBorrowerName || f.borrower) || f.from || f.to);
+}
 function getFiltered(){
   const f = state.filters;
   let list = state.transactions.filter(t=>{
@@ -3057,14 +3080,17 @@ function monthKeyFromOffset(offset){
    transaction and returns whichever one, if any, falls in the given
    calendar month — so it works for months in the future or past too.
    Since each installment is spaced exactly a month apart, at most one
-   shift can ever land in a given calendar month. */
+   shift can ever land in a given calendar month. Returns null if that
+   installment has already been paid (installmentsSettled already covers
+   it), since a paid installment isn't "due" anymore even if its scheduled
+   date happens to fall in the month being looked at. */
 function dueDateInMonth(t, ym){
   if(!t.due) return null;
   const totalInstallments = Math.max(1, t.installmentsTotal || 1);
   const maxShift = totalInstallments - 1;
   for(let s=0; s<=maxShift; s++){
     const d = shiftDueDate(t.due, s);
-    if(d.slice(0,7) === ym) return d;
+    if(d.slice(0,7) === ym) return installmentsSettled(t) > s ? null : d;
   }
   return null;
 }
@@ -3146,12 +3172,16 @@ function txTileHtml(t, draggableOverride){
     const gain = gainOf(t);
     const pct = Math.min(100, Math.round((paidAmount(t) / t.requested) * 100) || 0);
     const typeClass = typeColorClass(t.type);
-    const isDraggable = draggableOverride !== undefined ? draggableOverride : state.filters.sort==='custom';
+    // Reordering finds positions by ID, so it's never technically wrong, but
+    // with a filter narrowing the list, hidden items sit between what you
+    // see, so where a dragged item actually lands can look surprising once
+    // the filter clears. Simplest fix: only allow it in the plain,
+    // unfiltered Custom-order view, where what you see is the real order.
+    const isDraggable = draggableOverride !== undefined ? draggableOverride : (state.filters.sort==='custom' && !hasActiveTxFilters());
     return `
     <div class="tile" data-id="${t.id}" ${t.id===TOUR_DEMO_ID ? 'data-tour-demo="1"' : ''} ${isDraggable ? 'draggable="true"' : ''}>
       <div class="tile-top">
-        <div>
-          <div class="tile-item">${esc(t.item)}</div>
+        <div>          <div class="tile-item">${esc(t.item)}</div>
           <div class="tile-carrier">${esc(t.carrier)}</div>
         </div>
         <div class="kebab-wrap">
@@ -3597,8 +3627,12 @@ function renderAnalytics(){
   // 2. Income vs expense
   let months;
   if(af.from || af.to){
-    const fromD = af.from ? new Date(af.from) : new Date(af.to);
-    const toD = af.to ? new Date(af.to) : new Date();
+    // Parsed manually (not new Date(af.from)) since that parses "YYYY-MM-DD"
+    // as UTC midnight, then reading .getFullYear()/.getMonth() back in local
+    // time can land on the wrong day for timezones behind UTC, silently
+    // dropping the first month of the range.
+    const fromD = parseLocalDate(af.from || af.to);
+    const toD = af.to ? parseLocalDate(af.to) : new Date();
     months = [];
     const cursor = new Date(fromD.getFullYear(), fromD.getMonth(), 1);
     const end = new Date(toD.getFullYear(), toD.getMonth(), 1);
@@ -3809,7 +3843,17 @@ function openTxModal(id){
   txOverlay.classList.add("open"); updateScrollLock();
 }
 function closeTxModal(){ txOverlay.classList.remove("open"); editingId = null; updateScrollLock(); }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+/* Local calendar date as "YYYY-MM-DD". Deliberately NOT
+   new Date().toISOString().slice(0,10) — toISOString() converts to UTC
+   first, so for any timezone ahead of UTC (e.g. UTC+8), every day between
+   midnight and the local-to-UTC offset hour would silently report
+   YESTERDAY's date. Since this drives every due-date and overdue check
+   in the app, that bug could make things flip overdue/not-overdue purely
+   based on what time of day it was. */
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
 
 function updateGainPreview(){
   const bill = parseFloat(document.getElementById("fiBill").value) || 0;
@@ -3827,13 +3871,19 @@ function toggleFiWalletHint(){
 document.getElementById("fiWallet").addEventListener("change", toggleFiWalletHint);
 
 document.getElementById("fiTotal").addEventListener("input", autoSplit);
-document.getElementById("fiBill").addEventListener("input", autoSplit);
+document.getElementById("fiRequested").addEventListener("input", autoSplit);
+/* Split is "per-installment cost" of the Requested amount (total to
+   collect), not the Bill amount (what you pay upstream). Those only match
+   when there's no markup. This used to divide by `bill`, so any loan with
+   a markup would suggest installments that only ever add up to the bill,
+   never the full requested amount, and would never auto-complete if you
+   just paid the suggested number every time. */
 function autoSplit(){
   const splitField = document.getElementById("fiSplit");
   if(splitField.dataset.manual === "1") return;
-  const bill = parseFloat(document.getElementById("fiBill").value) || 0;
+  const requested = parseFloat(document.getElementById("fiRequested").value) || 0;
   const total = parseInt(document.getElementById("fiTotal").value) || 1;
-  splitField.value = total > 0 ? round2(bill/total) : "";
+  splitField.value = total > 0 ? round2(requested/total) : "";
 }
 document.getElementById("fiSplit").addEventListener("input", (e)=>{ e.target.dataset.manual = "1"; });
 
@@ -3843,7 +3893,7 @@ document.getElementById("txForm").addEventListener("submit", function(e){
   const bill = parseFloat(document.getElementById("fiBill").value) || 0;
   const requested = parseFloat(document.getElementById("fiRequested").value) || 0;
   let split = parseFloat(document.getElementById("fiSplit").value);
-  if(isNaN(split)) split = round2(bill/total);
+  if(isNaN(split)) split = round2(requested/total);
 
   const fundingWalletId = document.getElementById("fiWallet").value || null;
   const payload = {
@@ -4891,7 +4941,11 @@ function downloadCSV(list){
   toast(`Exported ${list.length} transaction${list.length===1?"":"s"} as CSV`, "success");
 }
 function csvCell(v){
-  const s = String(v ?? "");
+  let s = String(v ?? "");
+  // Some spreadsheet apps treat a cell starting with =, +, -, or @ as a
+  // formula. A prefixed apostrophe is the standard way to defuse that
+  // while keeping the visible text unchanged.
+  if(/^[=+\-@]/.test(s)) s = "'" + s;
   if(/[",\r\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
   return s;
 }
@@ -4991,7 +5045,7 @@ function normalizeImportRecord(r){
   const bill = parseFloat(g("bill","Bill Amount")) || 0;
   const requested = parseFloat(g("requested","Requested Amount")) || 0;
   let split = parseFloat(g("split","Split Amount"));
-  if(isNaN(split)) split = round2(bill/total);
+  if(isNaN(split)) split = round2(requested/total);
   const rec = {
     id: uid(),
     item: String(item).trim(),
