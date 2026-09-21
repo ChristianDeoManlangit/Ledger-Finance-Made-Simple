@@ -1658,12 +1658,6 @@ input[list]::-webkit-list-button{ display:none !important; }
           <label for="wiBalance">Starting balance</label>
           <input id="wiBalance" type="number" step="0.01" value="0" required>
         </div>
-        <div class="field">
-          <div class="check-row">
-            <input type="checkbox" id="wiIncludeInNetWorth" checked>
-            <label for="wiIncludeInNetWorth">Include in net worth</label>
-          </div>
-        </div>
         <div id="wInterestBlock" style="display:none;">
           <div class="field">
             <label for="wiInterestRate">Interest rate <span style="font-weight:400;color:var(--ink-faint)">(% per year, optional)</span></label>
@@ -2036,7 +2030,7 @@ const GoogleSync = (function(){
   const EMAIL_KEY = "ledger:sync:email";
   const TOKEN_KEY = "ledger:sync:token"; // {access_token, expires_at} - see loadCache() for why this matters
 
-  let codeClient = null;
+  let tokenClient = null;
   let accessToken = null;
   let tokenExpiresAt = 0;
   let fileId = null;
@@ -2134,22 +2128,9 @@ const GoogleSync = (function(){
   async function apiFetch(url, opts){
     opts = opts || {};
     opts.headers = Object.assign({}, opts.headers, { Authorization: "Bearer " + accessToken });
-    let res = await fetch(url, opts);
+    const res = await fetch(url, opts);
     if(res.status === 401){
-      // Token expired mid-flight (e.g. the device was asleep through the
-      // scheduled refresh). Try one silent server-side refresh and retry
-      // the request once before giving up.
-      try{
-        await refreshViaServer();
-        opts.headers = Object.assign({}, opts.headers, { Authorization: "Bearer " + accessToken });
-        res = await fetch(url, opts);
-      }catch(e){
-        accessToken = null; tokenExpiresAt = 0;
-        clearToken();
-        throw new Error("auth-expired");
-      }
-    }
-    if(res.status === 401){
+      // Token expired mid-flight, force a fresh one and let the caller retry.
       accessToken = null; tokenExpiresAt = 0;
       clearToken();
       throw new Error("auth-expired");
@@ -2161,83 +2142,60 @@ const GoogleSync = (function(){
     return res;
   }
 
-  function ensureCodeClient(){
-    if(codeClient) return codeClient;
+  function ensureTokenClient(){
+    if(tokenClient) return tokenClient;
     if(typeof google === "undefined" || !google.accounts || !google.accounts.oauth2){
       throw new Error("Google Identity Services hasn't loaded yet, check your connection and try again.");
     }
-    codeClient = google.accounts.oauth2.initCodeClient({
+    tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
-      ux_mode: "popup",
+      // FedCM is Google's newer, browser-mediated sign-in path that
+      // doesn't depend on third-party cookies the way the old silent
+      // iframe did, so it's more likely to succeed for silent reauth.
+      use_fedcm_for_prompt: true,
       callback: ()=>{} // overridden per-request below
     });
-    return codeClient;
+    return tokenClient;
   }
 
-  /* Explicit sign-in only: opens Google's popup and hands back a one-time
-     authorization code. The code itself is useless on its own, it has to
-     be exchanged for real tokens, and that exchange needs the client
-     secret, which must never live in this browser-side file. So the
-     code goes to our own server (exchangeCode below) and that's the
-     only place tokens actually get minted. */
-  function requestCode(){
+  /* Requests an access token. "silent" tries with no UI (used for
+     auto-reconnect on later devices/sessions); pass false to force
+     the account picker / consent screen on an explicit sign-in click.
+     Passing the previously-seen email as a login hint measurably
+     improves how often the silent path succeeds. */
+  function requestToken(silent){
     return new Promise((resolve, reject)=>{
       try{
-        const client = ensureCodeClient();
+        const client = ensureTokenClient();
         client.callback = (resp)=>{
-          if(resp && resp.code) resolve(resp.code);
-          else reject(new Error((resp && resp.error) || "sign-in-failed"));
+          if(resp && resp.access_token){
+            accessToken = resp.access_token;
+            tokenExpiresAt = Date.now() + ((resp.expires_in||3600) * 1000) - 30000;
+            saveToken();
+            resolve(resp);
+          } else {
+            reject(new Error((resp && resp.error) || "sign-in-failed"));
+          }
         };
-        client.requestCode();
+        const opts = { prompt: silent ? "none" : "consent" };
+        if(silent && email) opts.hint = email;
+        client.requestAccessToken(opts);
       }catch(e){ reject(e); }
     });
   }
-
-  /* Sends the one-time code to our own /api/exchange endpoint. It
-     swaps the code for an access token (handed back here) and a refresh
-     token, which the server keeps for us in an httpOnly cookie, this JS
-     never sees it and never needs to. */
-  async function exchangeCode(code){
-    const res = await fetch("/api/exchange", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok || !data.access_token) throw new Error(data.error || "exchange-failed");
-    accessToken = data.access_token;
-    tokenExpiresAt = Date.now() + ((data.expires_in||3600) * 1000) - 30000;
-    saveToken();
-    scheduleTokenRefresh();
-  }
-
-  /* This is the actual fix for the 1-hour sign-out problem: instead of a
-     silent Google iframe reauth (which needs third-party cookies a lot
-     of browsers now block), this is a plain same-origin fetch to our own
-     server, which uses the refresh token cookie to mint a new access
-     token. No popup, no iframe, nothing for a browser to block. Runs on
-     boot (tryAutoConnect) and again on a timer just before every token
-     expires (scheduleTokenRefresh), so once you've signed in once, you
-     shouldn't see the sign-in popup again unless you explicitly
-     disconnect or revoke access from your Google account settings. */
-  async function refreshViaServer(){
-    const res = await fetch("/api/refresh");
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok || !data.access_token) throw new Error(data.error || "refresh-failed");
-    accessToken = data.access_token;
-    tokenExpiresAt = Date.now() + ((data.expires_in||3600) * 1000) - 30000;
-    saveToken();
-    scheduleTokenRefresh();
-  }
-
-  let refreshTimer = null;
-  function scheduleTokenRefresh(){
-    clearTimeout(refreshTimer);
-    const delay = Math.max(10000, tokenExpiresAt - Date.now() - 60000);
-    refreshTimer = setTimeout(()=>{
-      refreshViaServer().catch(()=>setStatus("reconnect-needed"));
-    }, delay);
+  /* Silent token requests can fail spuriously (GIS iframe not warmed up
+     yet, a slow network, etc.) as well as for real reasons (the browser
+     has no active Google session). Give it a couple of quick retries
+     before treating it as a genuine sign-out. */
+  async function requestTokenSilentWithRetry(attempts){
+    attempts = attempts || 3;
+    let lastErr;
+    for(let i=0;i<attempts;i++){
+      try{ return await requestToken(true); }
+      catch(e){ lastErr = e; if(i < attempts-1) await new Promise(r=>setTimeout(r, 400 + i*400)); }
+    }
+    throw lastErr;
   }
 
   async function fetchEmail(){
@@ -2366,8 +2324,7 @@ const GoogleSync = (function(){
       throw new Error("Google sync isn't configured yet, add your OAuth Client ID in the GoogleSync module.");
     }
     setStatus("connecting");
-    const code = await requestCode();
-    await exchangeCode(code);
+    await requestToken(false);
     await fetchEmail();
     await findOrCreateFile();
     const changed = await pullAndMerge();
@@ -2388,17 +2345,29 @@ const GoogleSync = (function(){
      load (e.g. cookies not yet warmed, or the person just signed into
      Google in another tab) may become available shortly after. */
   let autoConnectRetryWired = false;
+  function waitForGis(timeoutMs){
+    return new Promise((resolve, reject)=>{
+      if(typeof google !== "undefined" && google.accounts && google.accounts.oauth2){ resolve(); return; }
+      const iv = setInterval(()=>{
+        if(typeof google !== "undefined" && google.accounts && google.accounts.oauth2){
+          clearInterval(iv); clearTimeout(to); resolve();
+        }
+      }, 200);
+      const to = setTimeout(()=>{ clearInterval(iv); reject(new Error("gis-not-loaded")); }, timeoutMs || 8000);
+    });
+  }
   async function tryAutoConnect(){
     loadCache();
     if(!isConfigured() || !fileId) return false;
     // Fast path: if we still have a valid cached access token from earlier
     // this session (or an earlier tab), use it directly with no network
-    // round-trip to Google at all. Silent server-side refresh below is
-    // only the fallback once that cached token has genuinely expired
+    // round-trip to Google at all and no dependency on the Google
+    // Identity Services script even having loaded yet, this is what
+    // actually keeps you signed in across a refresh. Silent reauth below
+    // is only the fallback once that cached token has genuinely expired
     // (~1 hour) or there wasn't one cached.
     if(loadToken()){
       try{
-        scheduleTokenRefresh();
         await fetchEmail();
         const changed = await pullAndMerge();
         startPolling();
@@ -2407,15 +2376,12 @@ const GoogleSync = (function(){
         return true;
       }catch(e){
         accessToken = null; tokenExpiresAt = 0; clearToken();
-        // fall through to server-side refresh below
+        // fall through to silent reauth below
       }
     }
     try{
-      // No GIS, no popup, no iframe here, just a same-origin fetch using
-      // the refresh token cookie, so this works even before the Google
-      // Identity Services script (or a Google session in this browser)
-      // is involved at all.
-      await refreshViaServer();
+      await waitForGis();
+      await requestTokenSilentWithRetry(3);
       await fetchEmail();
       const changed = await pullAndMerge();
       startPolling();
@@ -2442,11 +2408,9 @@ const GoogleSync = (function(){
   function disconnect(){
     clearInterval(pollTimer);
     clearTimeout(pushTimer);
-    clearTimeout(refreshTimer);
     if(accessToken && typeof google !== "undefined" && google.accounts && google.accounts.oauth2){
       try{ google.accounts.oauth2.revoke(accessToken, ()=>{}); }catch(e){}
     }
-    fetch("/api/logout", { method: "POST" }).catch(()=>{}); // clears the refresh-token cookie server-side
     accessToken = null; tokenExpiresAt = 0;
     forgetConnection();
     setStatus("signed-out");
@@ -2748,16 +2712,11 @@ function walletBalance(w){
   return round2(bal);
 }
 function totalWalletBalance(){ return round2(state.wallets.reduce((s,w)=>s+walletBalance(w),0)); }
-/* Net worth only, this leaves out wallets the user has marked as excluded
-   (e.g. a wallet that isn't really "theirs" to count, or one they'd
-   rather track separately). "Total wallet balance" elsewhere is still the
-   sum of every wallet, this is a separate figure just for Net worth. */
-function netWorthWalletBalance(){ return round2(state.wallets.reduce((s,w)=>s+(w.excludeFromNetWorth ? 0 : walletBalance(w)),0)); }
 /* Only wallet-funded loans count as a receivable toward net worth, pass-by
    loans never tied up real wallet money, so they stay purely informational. */
 function fundedLoans(){ return state.transactions.filter(t=>t.fundingWalletId); }
 function fundedOutstanding(){ return round2(fundedLoans().filter(t=>!isComplete(t)).reduce((s,t)=>s+remaining(t),0)); }
-function netWorth(){ return round2(netWorthWalletBalance() + fundedOutstanding() + walletFundedGoalsSaved()); }
+function netWorth(){ return round2(totalWalletBalance() + fundedOutstanding() + walletFundedGoalsSaved()); }
 function walletActivityFor(walletId){
   return state.walletTransactions.filter(wt=>wt.walletId===walletId || wt.toWalletId===walletId);
 }
@@ -3400,7 +3359,6 @@ function renderWallets(){
       <div class="wtile-balance ${bal<0?"neg":""}">${fmt(bal)}</div>
       ${w.interestRate>0 ? `<div class="wtile-linked">${w.interestRate.toFixed(2)}% p.a. &middot; ${netInterestRate(w).toFixed(2)}% net${w.withholdingTax?" (20% WT)":""} &middot; ~${fmt(round2(bal*netInterestRate(w)/100))}/yr</div>` : ``}
       ${linkedCount ? `<div class="wtile-linked">${linkedCount} open loan${linkedCount===1?"":"s"} funded from here</div>` : ``}
-      ${w.excludeFromNetWorth ? `<div class="wtile-linked">Not counted in net worth</div>` : ``}
       <div class="tile-actions">
         <button class="pay-btn" data-wquickadd="${w.id}"><svg class="icon"><use href="#i-plus"/></svg>Add transaction</button>
       </div>
@@ -4252,7 +4210,6 @@ function openWalletModal(id){
     document.getElementById("wiBalance").value = w.startingBalance;
     document.getElementById("wiInterestRate").value = w.interestRate || "";
     document.getElementById("wiWithholdingTax").checked = w.withholdingTax !== false;
-    document.getElementById("wiIncludeInNetWorth").checked = !w.excludeFromNetWorth;
     wFormType = w.type;
     wFormIcon = w.icon || walletTypeInfo(w.type).icon;
     wFormProviderId = w.providerId || null;
@@ -4262,7 +4219,6 @@ function openWalletModal(id){
     document.getElementById("wiBalance").value = 0;
     document.getElementById("wiInterestRate").value = "";
     document.getElementById("wiWithholdingTax").checked = true;
-    document.getElementById("wiIncludeInNetWorth").checked = true;
     wFormType = "cash";
     wFormIcon = walletTypeInfo("cash").icon;
     wFormProviderId = null;
@@ -4281,14 +4237,13 @@ document.getElementById("walletForm").addEventListener("submit", function(e){
   const startingBalance = parseFloat(document.getElementById("wiBalance").value) || 0;
   const interestRate = INTEREST_ELIGIBLE_TYPES.includes(wFormType) ? (parseFloat(document.getElementById("wiInterestRate").value) || 0) : 0;
   const withholdingTax = document.getElementById("wiWithholdingTax").checked;
-  const excludeFromNetWorth = !document.getElementById("wiIncludeInNetWorth").checked;
   if(!name){ toast("Give the wallet a name", "error"); return; }
   if(editingWalletId){
     const w = walletById(editingWalletId);
-    Object.assign(w, {name, type:wFormType, icon:wFormIcon, providerId:wFormProviderId, startingBalance, interestRate, withholdingTax, excludeFromNetWorth});
+    Object.assign(w, {name, type:wFormType, icon:wFormIcon, providerId:wFormProviderId, startingBalance, interestRate, withholdingTax});
     toast(`Saved changes to ${name}`, "success");
   } else {
-    state.wallets.push({id:uid(), name, type:wFormType, icon:wFormIcon, providerId:wFormProviderId, startingBalance, interestRate, withholdingTax, excludeFromNetWorth, order:nextOrder()});
+    state.wallets.push({id:uid(), name, type:wFormType, icon:wFormIcon, providerId:wFormProviderId, startingBalance, interestRate, withholdingTax, order:nextOrder()});
     toast(`Added wallet ${name}`, "success");
   }
   persist();
