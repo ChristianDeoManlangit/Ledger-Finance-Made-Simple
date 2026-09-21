@@ -2194,12 +2194,12 @@ const GoogleSync = (function(){
     });
   }
 
-  /* Sends the one-time code to our own /api/google/exchange endpoint. It
+  /* Sends the one-time code to our own /api/exchange endpoint. It
      swaps the code for an access token (handed back here) and a refresh
      token, which the server keeps for us in an httpOnly cookie, this JS
      never sees it and never needs to. */
   async function exchangeCode(code){
-    const res = await fetch("/api/google/exchange", {
+    const res = await fetch("/api/exchange", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code })
@@ -2222,7 +2222,7 @@ const GoogleSync = (function(){
      shouldn't see the sign-in popup again unless you explicitly
      disconnect or revoke access from your Google account settings. */
   async function refreshViaServer(){
-    const res = await fetch("/api/google/refresh");
+    const res = await fetch("/api/refresh");
     const data = await res.json().catch(()=>({}));
     if(!res.ok || !data.access_token) throw new Error(data.error || "refresh-failed");
     accessToken = data.access_token;
@@ -2446,7 +2446,7 @@ const GoogleSync = (function(){
     if(accessToken && typeof google !== "undefined" && google.accounts && google.accounts.oauth2){
       try{ google.accounts.oauth2.revoke(accessToken, ()=>{}); }catch(e){}
     }
-    fetch("/api/google/logout", { method: "POST" }).catch(()=>{}); // clears the refresh-token cookie server-side
+    fetch("/api/logout", { method: "POST" }).catch(()=>{}); // clears the refresh-token cookie server-side
     accessToken = null; tokenExpiresAt = 0;
     forgetConnection();
     setStatus("signed-out");
