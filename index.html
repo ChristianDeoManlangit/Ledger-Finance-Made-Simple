@@ -1658,6 +1658,12 @@ input[list]::-webkit-list-button{ display:none !important; }
           <label for="wiBalance">Starting balance</label>
           <input id="wiBalance" type="number" step="0.01" value="0" required>
         </div>
+        <div class="field">
+          <div class="check-row">
+            <input type="checkbox" id="wiIncludeNetWorth" checked>
+            <label for="wiIncludeNetWorth">Include this wallet in net worth</label>
+          </div>
+        </div>
         <div id="wInterestBlock" style="display:none;">
           <div class="field">
             <label for="wiInterestRate">Interest rate <span style="font-weight:400;color:var(--ink-faint)">(% per year, optional)</span></label>
@@ -2712,11 +2718,15 @@ function walletBalance(w){
   return round2(bal);
 }
 function totalWalletBalance(){ return round2(state.wallets.reduce((s,w)=>s+walletBalance(w),0)); }
+/* Wallets can be opted out of the net worth figure (e.g. a wallet that
+   holds someone else's money, or one you just don't want counted), while
+   still showing their real balance everywhere else. */
+function netWorthWalletBalance(){ return round2(state.wallets.filter(w=>w.includeInNetWorth!==false).reduce((s,w)=>s+walletBalance(w),0)); }
 /* Only wallet-funded loans count as a receivable toward net worth, pass-by
    loans never tied up real wallet money, so they stay purely informational. */
 function fundedLoans(){ return state.transactions.filter(t=>t.fundingWalletId); }
 function fundedOutstanding(){ return round2(fundedLoans().filter(t=>!isComplete(t)).reduce((s,t)=>s+remaining(t),0)); }
-function netWorth(){ return round2(totalWalletBalance() + fundedOutstanding() + walletFundedGoalsSaved()); }
+function netWorth(){ return round2(netWorthWalletBalance() + fundedOutstanding() + walletFundedGoalsSaved()); }
 function walletActivityFor(walletId){
   return state.walletTransactions.filter(wt=>wt.walletId===walletId || wt.toWalletId===walletId);
 }
@@ -3357,6 +3367,7 @@ function renderWallets(){
       </div>
       <div class="wtile-balance-label">Balance</div>
       <div class="wtile-balance ${bal<0?"neg":""}">${fmt(bal)}</div>
+      ${w.includeInNetWorth===false ? `<div class="wtile-linked">Not counted in net worth</div>` : ``}
       ${w.interestRate>0 ? `<div class="wtile-linked">${w.interestRate.toFixed(2)}% p.a. &middot; ${netInterestRate(w).toFixed(2)}% net${w.withholdingTax?" (20% WT)":""} &middot; ~${fmt(round2(bal*netInterestRate(w)/100))}/yr</div>` : ``}
       ${linkedCount ? `<div class="wtile-linked">${linkedCount} open loan${linkedCount===1?"":"s"} funded from here</div>` : ``}
       <div class="tile-actions">
@@ -4210,6 +4221,7 @@ function openWalletModal(id){
     document.getElementById("wiBalance").value = w.startingBalance;
     document.getElementById("wiInterestRate").value = w.interestRate || "";
     document.getElementById("wiWithholdingTax").checked = w.withholdingTax !== false;
+    document.getElementById("wiIncludeNetWorth").checked = w.includeInNetWorth !== false;
     wFormType = w.type;
     wFormIcon = w.icon || walletTypeInfo(w.type).icon;
     wFormProviderId = w.providerId || null;
@@ -4219,6 +4231,7 @@ function openWalletModal(id){
     document.getElementById("wiBalance").value = 0;
     document.getElementById("wiInterestRate").value = "";
     document.getElementById("wiWithholdingTax").checked = true;
+    document.getElementById("wiIncludeNetWorth").checked = true;
     wFormType = "cash";
     wFormIcon = walletTypeInfo("cash").icon;
     wFormProviderId = null;
@@ -4237,13 +4250,14 @@ document.getElementById("walletForm").addEventListener("submit", function(e){
   const startingBalance = parseFloat(document.getElementById("wiBalance").value) || 0;
   const interestRate = INTEREST_ELIGIBLE_TYPES.includes(wFormType) ? (parseFloat(document.getElementById("wiInterestRate").value) || 0) : 0;
   const withholdingTax = document.getElementById("wiWithholdingTax").checked;
+  const includeInNetWorth = document.getElementById("wiIncludeNetWorth").checked;
   if(!name){ toast("Give the wallet a name", "error"); return; }
   if(editingWalletId){
     const w = walletById(editingWalletId);
-    Object.assign(w, {name, type:wFormType, icon:wFormIcon, providerId:wFormProviderId, startingBalance, interestRate, withholdingTax});
+    Object.assign(w, {name, type:wFormType, icon:wFormIcon, providerId:wFormProviderId, startingBalance, interestRate, withholdingTax, includeInNetWorth});
     toast(`Saved changes to ${name}`, "success");
   } else {
-    state.wallets.push({id:uid(), name, type:wFormType, icon:wFormIcon, providerId:wFormProviderId, startingBalance, interestRate, withholdingTax, order:nextOrder()});
+    state.wallets.push({id:uid(), name, type:wFormType, icon:wFormIcon, providerId:wFormProviderId, startingBalance, interestRate, withholdingTax, includeInNetWorth, order:nextOrder()});
     toast(`Added wallet ${name}`, "success");
   }
   persist();
