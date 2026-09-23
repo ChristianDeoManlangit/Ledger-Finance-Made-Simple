@@ -1791,6 +1791,11 @@ input[list]::-webkit-list-button{ display:none !important; }
             <label for="giUseWalletBalance">Track progress from this wallet's actual balance</label>
           </div>
           <div class="hint">Progress follows the wallet's balance automatically, no manual logging. Turn this off to log contributions by hand instead.</div>
+          <div id="giMirrorAmountField" style="display:none; margin-top:10px;">
+            <label for="giMirrorAmount">Mirror only up to a specific amount <span style="font-weight:400;color:var(--ink-faint)">(optional)</span></label>
+            <input id="giMirrorAmount" type="number" min="0" step="0.01" placeholder="Leave blank to mirror the full balance">
+            <div class="hint">Useful when this wallet also backs other goals or spending, so it counts as "saved" here only up to this cap, even if the wallet holds more.</div>
+          </div>
         </div>
       </form>
     </div>
@@ -2737,7 +2742,9 @@ function walletActivityFor(walletId){
 function goalSaved(g){
   if(g.useWalletBalance && g.fundingWalletId){
     const w = walletById(g.fundingWalletId);
-    return w ? Math.max(0, round2(walletBalance(w))) : 0;
+    if(!w) return 0;
+    const bal = Math.max(0, round2(walletBalance(w)));
+    return g.mirrorAmount > 0 ? round2(Math.min(g.mirrorAmount, bal)) : bal;
   }
   return round2((g.contributions||[]).reduce((s,c)=>s+c.amount,0));
 }
@@ -3447,7 +3454,7 @@ function renderGoals(){
           <div class="gtile-icon ${complete?"gtile-complete":""}"><svg class="icon"><use href="#${g.icon||'i-target'}"/></svg></div>
           <div>
             <div class="gtile-name">${esc(g.name)}</div>
-            <div class="gtile-date">${g.targetDate ? (overdue&&!complete ? "Was due " : "Due ") + fmtDate(g.targetDate) : (w ? (g.useWalletBalance ? "Tracking " + esc(w.name) + " balance" : "Funded from " + esc(w.name)) : "Manual tracking")}</div>
+            <div class="gtile-date">${g.targetDate ? (overdue&&!complete ? "Was due " : "Due ") + fmtDate(g.targetDate) : (w ? (g.useWalletBalance ? (g.mirrorAmount>0 ? "Mirroring up to " + fmt(g.mirrorAmount) + " of " + esc(w.name) : "Tracking " + esc(w.name) + " balance") : "Funded from " + esc(w.name)) : "Manual tracking")}</div>
           </div>
         </div>
         <div class="kebab-wrap">
@@ -3465,7 +3472,7 @@ function renderGoals(){
       </div>
       <div class="tile-actions">
         ${g.useWalletBalance
-          ? `<button class="pay-btn done" type="button" disabled><svg class="icon"><use href="#i-wallet"/></svg>Auto-tracked from ${esc(w ? w.name : "wallet")}</button>`
+          ? `<button class="pay-btn done" type="button" disabled><svg class="icon"><use href="#i-wallet"/></svg>${g.mirrorAmount>0 ? `Mirroring ${fmt(g.mirrorAmount)} cap` : `Auto-tracked from ${esc(w ? w.name : "wallet")}`}</button>`
           : `<button class="pay-btn ${complete?'done':''}" data-gcontrib="${g.id}">
           <svg class="icon"><use href="#${complete?'i-check-circle':'i-clock'}"/></svg>
           ${complete ? "Reached, view log" : `Contribute, ${fmt(goalRemaining(g))} left`}
@@ -4412,8 +4419,15 @@ function updateGiUseBalanceVisibility(){
   const hasWallet = !!document.getElementById("giWallet").value;
   document.getElementById("giUseBalanceField").style.display = hasWallet ? "block" : "none";
   if(!hasWallet) document.getElementById("giUseWalletBalance").checked = false;
+  updateGiMirrorAmountVisibility();
+}
+function updateGiMirrorAmountVisibility(){
+  const on = document.getElementById("giUseWalletBalance").checked;
+  document.getElementById("giMirrorAmountField").style.display = on ? "block" : "none";
+  if(!on) document.getElementById("giMirrorAmount").value = "";
 }
 document.getElementById("giWallet").addEventListener("change", updateGiUseBalanceVisibility);
+document.getElementById("giUseWalletBalance").addEventListener("change", updateGiMirrorAmountVisibility);
 function openGoalModal(id){
   editingGoalId = id || null;
   const giWallet = document.getElementById("giWallet");
@@ -4426,6 +4440,7 @@ function openGoalModal(id){
     setDv("giDate", g.targetDate || "");
     giWallet.value = g.fundingWalletId || "";
     document.getElementById("giUseWalletBalance").checked = !!g.useWalletBalance;
+    document.getElementById("giMirrorAmount").value = g.mirrorAmount || "";
     gFormIcon = g.icon || "i-target";
     document.getElementById("goalModalTitle").textContent = "Edit goal";
   } else {
@@ -4434,6 +4449,7 @@ function openGoalModal(id){
     setDv("giDate", "");
     giWallet.value = "";
     document.getElementById("giUseWalletBalance").checked = false;
+    document.getElementById("giMirrorAmount").value = "";
     gFormIcon = "i-target";
     document.getElementById("goalModalTitle").textContent = "Add goal";
   }
@@ -4452,13 +4468,14 @@ document.getElementById("goalForm").addEventListener("submit", function(e){
   const targetDate = dv("giDate") || "";
   const fundingWalletId = document.getElementById("giWallet").value || null;
   const useWalletBalance = fundingWalletId ? document.getElementById("giUseWalletBalance").checked : false;
+  const mirrorAmount = useWalletBalance ? (parseFloat(document.getElementById("giMirrorAmount").value) || 0) : 0;
   if(!name){ toast("Give the goal a name", "error"); return; }
   if(editingGoalId){
     const g = goalById(editingGoalId);
-    Object.assign(g, {name, targetAmount, targetDate, fundingWalletId, useWalletBalance, icon:gFormIcon});
+    Object.assign(g, {name, targetAmount, targetDate, fundingWalletId, useWalletBalance, mirrorAmount, icon:gFormIcon});
     toast(`Saved changes to ${name}`, "success");
   } else {
-    state.goals.push({id:uid(), name, targetAmount, targetDate, fundingWalletId, useWalletBalance, icon:gFormIcon, contributions:[], order:nextOrder()});
+    state.goals.push({id:uid(), name, targetAmount, targetDate, fundingWalletId, useWalletBalance, mirrorAmount, icon:gFormIcon, contributions:[], order:nextOrder()});
     toast(`Added goal ${name}`, "success");
   }
   persist();
