@@ -304,7 +304,7 @@ a{color:inherit;}
 /* ---- Summary tiles ---- */
 .summary{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(4,minmax(0,1fr));
   gap:12px;
   margin-bottom:18px;
 }
@@ -312,7 +312,7 @@ a{color:inherit;}
 .summary > *:nth-child(2){animation-delay:.04s;}
 .summary > *:nth-child(3){animation-delay:.08s;}
 .summary > *:nth-child(4){animation-delay:.12s;}
-@media (max-width:900px){ .summary{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:900px){ .summary{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media (max-width:380px){
   .stat-tile{padding:14px 15px;}
   .stat-value{font-size:22px;}
@@ -550,7 +550,7 @@ input[list]::-webkit-list-button{ display:none !important; }
 .cal-popover{
   position:fixed; z-index:300; top:50%; left:50%;
   background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-l);
-  box-shadow:var(--shadow-3); padding:16px; width:280px;
+  box-shadow:var(--shadow-3); padding:16px; width:min(280px, calc(100vw - 24px));
   opacity:0; transform:translate(-50%,-50%) scale(.94); pointer-events:none;
   transition:opacity .18s var(--ease), transform .2s var(--ease-spring);
 }
@@ -710,7 +710,7 @@ input[list]::-webkit-list-button{ display:none !important; }
    ============================================================ */
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(272px, 1fr));
+  grid-template-columns:repeat(auto-fill, minmax(min(272px, 100%), 1fr));
   gap:14px;
 }
 .grid > *:nth-child(1){animation-delay:.02s;}
@@ -889,7 +889,7 @@ input[list]::-webkit-list-button{ display:none !important; }
 .vt-btn .icon{width:15px;height:15px;}
 .vt-btn.is-active{background:var(--ink); color:#fff;}
 .vt-btn:not(.is-active):hover{color:var(--ink);}
-.grid.stacked{grid-template-columns:1fr;}
+.grid.stacked{grid-template-columns:minmax(0,1fr);}
 
 /* ---- Compact 2-col grid mode on mobile (Wallets & Goals) ----
    At narrow widths, auto-fill collapses "Grid" mode to the same
@@ -900,7 +900,7 @@ input[list]::-webkit-list-button{ display:none !important; }
    stay single-column but get tighter spacing below. */
 @media (max-width:640px){
   #walletGrid.grid:not(.stacked), #goalGrid.grid:not(.stacked){
-    grid-template-columns:repeat(2, 1fr);
+    grid-template-columns:repeat(2, minmax(0,1fr));
     gap:10px;
   }
   #walletGrid.grid:not(.stacked) .tile, #goalGrid.grid:not(.stacked) .tile{
@@ -944,7 +944,7 @@ input[list]::-webkit-list-button{ display:none !important; }
 }
 
 /* ---- Analytics ---- */
-.an-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+.an-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;}
 .an-grid > *:nth-child(1){animation-delay:.02s;}
 .an-grid > *:nth-child(2){animation-delay:.06s;}
 .an-grid > *:nth-child(3){animation-delay:.10s;}
@@ -957,7 +957,7 @@ input[list]::-webkit-list-button{ display:none !important; }
 .an-card h3{margin:0 0 4px; font-size:14px; font-weight:700;}
 .an-card .an-sub{font-size:12px; color:var(--ink-faint); margin:0 0 16px;}
 .an-empty{padding:30px 10px; text-align:center; color:var(--ink-faint); font-size:13px;}
-@media (max-width:760px){ .an-grid{grid-template-columns:1fr;} .an-card.an-wide{grid-column:span 1;} }
+@media (max-width:760px){ .an-grid{grid-template-columns:minmax(0,1fr);} .an-card.an-wide{grid-column:span 1;} }
 
 .an-hbar-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
 .an-hbar-row:last-child{margin-bottom:0;}
@@ -1140,7 +1140,7 @@ input[list]::-webkit-list-button{ display:none !important; }
   background:var(--surface);
   border-radius:var(--radius-l);
   width:100%; max-width:480px;
-  max-height:88vh;
+  max-height:88vh; max-height:88dvh;
   display:flex; flex-direction:column;
   box-shadow:var(--shadow-3);
   transform:translateY(16px) scale(.97);
@@ -1170,8 +1170,8 @@ input[list]::-webkit-list-button{ display:none !important; }
 }
 .field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-tint);}
 .field textarea{resize:vertical; min-height:60px;}
-.field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-.field-row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;}
+.field-row{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px;}
+.field-row3{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:12px;}
 .hint{font-size:11.5px; color:var(--ink-faint); margin-top:5px;}
 
 .gain-preview{
@@ -1250,6 +1250,117 @@ input[list]::-webkit-list-button{ display:none !important; }
 .toast.success .icon{color:#4ADE80;}
 .toast.error .icon{color:#F87171;}
 .toast.info .icon{color:#93C5FD;}
+
+
+/* ============================================================
+   RESPONSIVE / OVERFLOW HARDENING
+   Cards, rows and modals must never grow with their content.
+   Flex and grid items default to min-width:auto, which means a long,
+   unbroken title pushes its container (and the whole page) wider.
+   Everything below gives those containers a real max width and lets
+   the text inside wrap or truncate instead.
+   ============================================================ */
+
+/* Page can never scroll sideways because of a wide child */
+.app{min-width:0; overflow-x:clip;}
+.grid, .blist, .summary, .an-grid, .subtabs-row, .filterbar{min-width:0;}
+.grid > *, .blist > *, .summary > *, .an-grid > *{min-width:0; max-width:100%;}
+
+/* Tiles: bounded width, text wraps instead of stretching the card */
+.tile{min-width:0; max-width:100%;}
+.tile-top > :first-child{flex:1 1 auto; min-width:0;}
+.tile-top .kebab-wrap{flex-shrink:0;}
+.wtile-top{min-width:0;}
+.wtile-top > :last-child{flex:1 1 auto; min-width:0;}
+.tile-person > :last-child{min-width:0; flex:1 1 auto;}
+
+.gtile-name, .gtile-date, .wtile-name, .wtile-type,
+.tile-item, .tile-carrier, .person-name, .person-date,
+.brow-name, .brow-sub, .pl-main, .act-wallet-name,
+.due-row-sub, .an-goal-top .name, .an-legend-label{
+  min-width:0; max-width:100%; overflow-wrap:anywhere;
+}
+.due-row-title{min-width:0;}
+
+/* Amount rows and progress labels: numbers wrap rather than push */
+.tile-amounts{gap:10px;}
+.amt-block{min-width:0;}
+.amt-block .amt-value, .wtile-balance, .pl-row .pl-amt{overflow-wrap:anywhere;}
+.progress-labels{gap:8px;}
+.progress-labels > :first-child{min-width:0; overflow-wrap:anywhere;}
+.progress-labels > :last-child{flex-shrink:0;}
+
+/* Badges (e.g. a long wallet name) get ellipsis instead of stretching */
+.tile-badges{min-width:0;}
+.badge{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+/* Buttons inside tiles wrap their label if it is too long */
+.tile-actions{min-width:0;}
+.pay-btn{min-width:0; max-width:100%; text-align:center; line-height:1.25; overflow-wrap:anywhere;}
+
+/* Borrower rows */
+.brow{min-width:0;}
+.brow-stats{flex-shrink:0;}
+@media (max-width:480px){ .brow{gap:10px;} .brow-stats{gap:10px;} }
+
+/* Log / activity rows */
+.pl-row{min-width:0;}
+.pl-row .pl-del, .pl-row .pl-icon, .act-lock{flex-shrink:0;}
+
+/* Analytics */
+.an-card{min-width:0;}
+.an-goal-top{gap:10px;}
+.an-goal-top .pct{flex-shrink:0;}
+.an-donut-wrap{min-width:0;}
+.an-donut-legend{min-width:0;}
+.an-legend-row{min-width:0;}
+
+/* Sub-tab rows: scroll inside the pill rather than overflow the page */
+.subtabs-row > *{min-width:0;}
+.subtabs-row .tabs{max-width:100%;}
+@media (max-width:480px){
+  .subtabs-row .tabs{overflow-x:auto; scrollbar-width:none;}
+  .subtabs-row .tabs::-webkit-scrollbar{display:none;}
+}
+.tab{white-space:nowrap; flex-shrink:0;}
+.viewtabs .tab{flex-shrink:1;}
+@media (max-width:480px){
+  .subtabs-row .tab{padding:7px 12px; font-size:13px;}
+}
+
+/* Filter bar controls can't be wider than the screen */
+.filterbar > *, .filterbar-inner > *{max-width:100%;}
+
+/* Modals: long names in titles / summaries / confirmations wrap */
+.modal{min-width:0; max-width:min(480px, 100%);}
+.modal.small{max-width:min(380px, 100%);}
+.modal-head{gap:12px;}
+.modal-head h2{min-width:0; overflow-wrap:anywhere;}
+.modal-head .icon-btn{flex-shrink:0;}
+.modal-body{min-width:0; overflow-x:hidden; overflow-wrap:anywhere;}
+.field, .field input, .field select, .field textarea{min-width:0; max-width:100%;}
+.pl-summary{gap:12px;}
+.pl-summary .pls-block{min-width:0; overflow-wrap:anywhere;}
+.pl-add-row{min-width:0;}
+.pl-add-row .field{min-width:0;}
+@media (max-width:480px){
+  .overlay{padding:12px;}
+}
+
+/* Toasts */
+.toast{min-width:0; overflow-wrap:anywhere;}
+.toast span{min-width:0;}
+
+/* Header */
+.brand-name, .brand-sub{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.brand > div{min-width:0;}
+
+/* Very small screens: keep the compact 2-col cards from breaking */
+@media (max-width:360px){
+  #walletGrid.grid:not(.stacked), #goalGrid.grid:not(.stacked){gap:8px;}
+  #walletGrid.grid:not(.stacked) .tile, #goalGrid.grid:not(.stacked) .tile{padding:10px;}
+  #walletGrid.grid:not(.stacked) .wtile-balance{font-size:14px;}
+}
 
 /* Scrollbar polish */
 ::-webkit-scrollbar{width:9px; height:9px;}
@@ -3363,7 +3474,7 @@ function renderWallets(){
         <div class="wtile-top" style="margin-bottom:0;">
           <div class="wtile-icon ${walletTypeClass(w.type)}">${w.providerId && providerById(w.providerId) ? providerAvatarHtml(providerById(w.providerId), 22) : `<svg class="icon"><use href="#${w.icon || ti.icon}"/></svg>`}</div>
           <div>
-            <div class="wtile-name">${esc(w.name)}</div>
+            <div class="wtile-name" title="${esc(w.name)}">${esc(w.name)}</div>
             <div class="wtile-type">${ti.label}</div>
           </div>
         </div>
@@ -3453,7 +3564,7 @@ function renderGoals(){
         <div class="wtile-top" style="margin-bottom:0;">
           <div class="gtile-icon ${complete?"gtile-complete":""}"><svg class="icon"><use href="#${g.icon||'i-target'}"/></svg></div>
           <div>
-            <div class="gtile-name">${esc(g.name)}</div>
+            <div class="gtile-name" title="${esc(g.name)}">${esc(g.name)}</div>
             <div class="gtile-date">${g.targetDate ? (overdue&&!complete ? "Was due " : "Due ") + fmtDate(g.targetDate) : (w ? (g.useWalletBalance ? (g.mirrorAmount>0 ? "Mirroring up to " + fmt(g.mirrorAmount) + " of " + esc(w.name) : "Tracking " + esc(w.name) + " balance") : "Funded from " + esc(w.name)) : "Manual tracking")}</div>
           </div>
         </div>
