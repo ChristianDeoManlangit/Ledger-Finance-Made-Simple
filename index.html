@@ -981,6 +981,59 @@ input[list]::-webkit-list-button{ display:none !important; }
 .an-goal-top .name{font-weight:600;}
 .an-goal-top .pct{color:var(--ink-faint);}
 
+/* ---- Analytics: Apple-style charts ---- */
+.an-hero{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+.an-hero-v{font-family:var(--font-display); font-size:30px; font-weight:700; letter-spacing:-.03em; line-height:1.1; font-variant-numeric:tabular-nums;}
+.an-hero-s{font-size:12px; color:var(--ink-faint); margin:3px 0 12px; min-height:16px; font-variant-numeric:tabular-nums;}
+.an-delta{font-size:12px; font-weight:700; padding:3px 9px; border-radius:99px; font-variant-numeric:tabular-nums;}
+.an-delta.up{color:var(--gain); background:var(--gain-tint);}
+.an-delta.down{color:var(--loss); background:var(--loss-tint);}
+.an-card svg text{font-family:var(--font-ui); font-size:10.5px; fill:var(--ink-faint);}
+.an-area,.an-bars{width:100%; height:auto; display:block; overflow:visible; touch-action:pan-y; cursor:crosshair;}
+.an-grid-l{stroke:var(--border); stroke-width:1; stroke-dasharray:2 5; stroke-linecap:round;}
+.an-zero{stroke:var(--border-strong); stroke-width:1;}
+.an-vl{stroke:var(--ink-faint); stroke-width:1;}
+.an-stroke{fill:none; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; animation:anDraw 1.1s var(--ease) both;}
+.an-fade{animation:anFade .9s .3s ease both;}
+.an-pulse{transform-box:fill-box; transform-origin:center; animation:anPulse 2.2s ease-out 1.1s infinite;}
+.an-bar{transform-box:fill-box; transform-origin:50% 100%; animation:barUp .8s var(--ease-spring) both;}
+.an-bg{transition:opacity .2s;} .an-hit{fill:transparent;}
+.an-bars.has-hover .an-bg:not(.on){opacity:.3;}
+.an-bg.on text{fill:var(--ink); font-weight:600;}
+.an-ring{position:relative; width:132px; height:132px; flex-shrink:0;}
+.an-ring svg{width:100%; height:100%; display:block; overflow:visible;}
+.an-arc{fill:none; cursor:pointer; animation:ringIn 1.1s var(--ease) both; transition:opacity .2s, stroke-width .25s var(--ease-spring);}
+.an-ring.hov .an-arc:not(.on){opacity:.25;}
+.an-arc.on{stroke-width:16;}
+.an-ring-c{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 24px; text-align:center; pointer-events:none;}
+.an-ring-c b{max-width:100%; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.an-ring-c span{max-width:100%; font-size:10.5px; font-weight:600; color:var(--ink-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.an-legend-row{padding:5px 8px; margin:0 -8px; border-radius:9px; transition:background .15s;}
+.an-legend-row.on{background:#F1F1F4;}
+.an-br{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+.an-br:last-child{margin-bottom:0;}
+.an-br-av{width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700;}
+.an-br-main{flex:1; min-width:0;}
+.an-br-top{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; margin-bottom:6px;}
+.an-br-label{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.an-br-val{font-weight:700; flex-shrink:0; font-variant-numeric:tabular-nums;}
+.an-br-track{height:8px; border-radius:99px; background:#F1F1F4; overflow:hidden;}
+.an-br-fill{height:100%; border-radius:99px; transform-origin:left; animation:barX .9s var(--ease) both; animation-delay:var(--d,0s);}
+.an-tip{position:fixed; z-index:900; pointer-events:none; opacity:0; transform:translate(-50%,-115%) scale(.96); transition:opacity .15s, transform .15s var(--ease); padding:9px 12px; border-radius:12px; font-size:12px; background:rgba(255,255,255,.78); -webkit-backdrop-filter:saturate(180%) blur(18px); backdrop-filter:saturate(180%) blur(18px); border:1px solid rgba(0,0,0,.06); box-shadow:var(--shadow-2);}
+.an-tip.on{opacity:1; transform:translate(-50%,-115%) scale(1);}
+.an-tip b{display:block; margin-bottom:4px; font-size:12px;}
+.an-tip .tp{display:flex; align-items:center; gap:7px; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+.an-tip .tp i{width:8px; height:8px; border-radius:50%;}
+.an-tip .tp span{margin-left:auto; padding-left:14px; font-weight:700; color:var(--ink);}
+@keyframes anDraw{from{stroke-dashoffset:1} to{stroke-dashoffset:0}}
+@keyframes anFade{from{opacity:0} to{opacity:1}}
+@keyframes anPulse{from{opacity:.45; transform:scale(1)} to{opacity:0; transform:scale(3.4)}}
+@keyframes barUp{from{transform:scaleY(0)}}
+@keyframes barX{from{transform:scaleX(0)}}
+@keyframes ringIn{from{stroke-dasharray:0 100}}
+@media (max-width:400px){ .an-ring{width:112px; height:112px;} .an-ring-c{padding:0 20px;} }
+@media (prefers-reduced-motion:reduce){ .an-card *{animation:none !important;} }
+
 /* ---- Segmented control (income/expense/transfer, etc.) ---- */
 .seg{display:flex; border:1px solid var(--border); border-radius:var(--radius-full); padding:3px; gap:2px; background:var(--surface);}
 .seg button{flex:1; padding:8px 10px; border-radius:var(--radius-full); border:none; background:none; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; transition:background .15s, color .15s;}
@@ -3636,84 +3689,159 @@ document.getElementById("goalActivityList").addEventListener("click", function(e
 });
 
 /* ============================================================
-   ANALYTICS, lightweight hand-rolled charts (no external libs)
+   ANALYTICS, Apple-style hand-rolled SVG/CSS charts (no libs):
+   scrubbable area lines, spring-in bars, activity rings.
    ============================================================ */
 const CHART_COLORS = {
   accent:"#3457D5", violet:"#6D3FD1", amber:"#B4690E", gain:"#0E9F6E",
   rose:"#C23574", teal:"#0E7C86", loss:"#E0402B", ink:"#1C1C1E", faint:"#A6A6AC", border:"#E6E6EA"
 };
-function sparklineSVG(points, color){
-  const w = 560, h = 150, pad = 10;
+const REDUCED_MOTION = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+let chartUid = 0; const chartWires = [];
+function showTip(html,x,y){
+  let t = document.getElementById("anTip");
+  if(!t){ t = document.createElement("div"); t.id = "anTip"; t.className = "an-tip"; document.body.appendChild(t); }
+  t.innerHTML = html; t.classList.add("on");
+  const hw = t.offsetWidth/2 + 8;
+  t.style.left = Math.min(innerWidth-hw, Math.max(hw, x)) + "px"; t.style.top = y + "px";
+}
+function hideTip(){ const t = document.getElementById("anTip"); if(t) t.classList.remove("on"); }
+function countUp(el){
+  const to = parseFloat(el.dataset.to); if(REDUCED_MOTION || !isFinite(to)) return;
+  const t0 = performance.now();
+  (function tick(n){ const p = Math.min(1,(n-t0)/850); el.textContent = fmt(round2(to*(1-Math.pow(1-p,4)))); if(p<1) requestAnimationFrame(tick); })(t0);
+}
+function fitText(el){ const n = el.textContent.length; el.style.fontSize = (n>12?11.5:n>9?13:16) + "px"; }
+function wireCharts(root){
+  hideTip();
+  root.querySelectorAll("[data-to]").forEach(countUp);
+  chartWires.splice(0).forEach(f=>f());
+}
+function svgPointer(svg, e, w){ const r = svg.getBoundingClientRect(); return {r, x:(e.clientX-r.left)/r.width*w}; }
+
+/* Smooth area line with gradient fill, draw-in, live end dot and scrub cursor */
+function areaChart(points, color){
   if(!points.length) return `<div class="an-empty">Not enough data yet.</div>`;
-  const ys = points.map(p=>p.y);
-  const minY = Math.min(...ys, 0), maxY = Math.max(...ys, 0.01);
-  const range = (maxY - minY) || 1;
-  const stepX = points.length > 1 ? (w - pad*2) / (points.length - 1) : 0;
-  const coords = points.map((p,i)=>{
-    const x = pad + i*stepX;
-    const y = h - 24 - ((p.y - minY) / range) * (h - 34);
-    return [x,y];
+  const id = "ac"+(++chartUid), w = 560, h = 170, pad = 12, top = 14, base = h-26, n = points.length;
+  const ys = points.map(p=>p.y), minY = Math.min(...ys,0), maxY = Math.max(...ys,0.01), rng = (maxY-minY)||1;
+  const sx = n>1 ? (w-pad*2)/(n-1) : 0;
+  const C = points.map((p,i)=>[n>1 ? pad+i*sx : w/2, base-((p.y-minY)/rng)*(base-top)]);
+  let d = `M${C[0][0].toFixed(1)},${C[0][1].toFixed(1)}`;
+  for(let i=1;i<n;i++){
+    const [x0,y0] = C[i-1], [x1,y1] = C[i], m = ((x0+x1)/2).toFixed(1);
+    d += ` C${m},${y0.toFixed(1)} ${m},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+  }
+  const area = n>1 ? `${d} L${C[n-1][0].toFixed(1)},${base} L${C[0][0].toFixed(1)},${base} Z` : "";
+  const grid = [0,1,2].map(i=>{ const y = top+i*(base-top)/2; return `<line class="an-grid-l" x1="${pad}" x2="${w-pad}" y1="${y}" y2="${y}"/>`; }).join("");
+  const zy = base-((0-minY)/rng)*(base-top);
+  const lastY = points[n-1].y, delta = lastY-points[0].y, lbl = i=>esc(points[i].label||"");
+  const restSub = n>1 ? `${points[0].label||""} → ${points[n-1].label||""}` : (points[0].label||"");
+  chartWires.push(()=>{
+    const svg = document.getElementById(id), cur = svg.querySelector(".an-cur"), end = svg.querySelector(".an-end");
+    const hv = document.getElementById(id+"v"), hs = document.getElementById(id+"s"), vl = cur.querySelector("line"), cs = cur.querySelectorAll("circle");
+    svg.addEventListener("pointermove", e=>{
+      const i = n>1 ? Math.max(0, Math.min(n-1, Math.round((svgPointer(svg,e,w).x-pad)/sx))) : 0, [x,y] = C[i];
+      cur.style.display = ""; end.style.display = "none";
+      vl.setAttribute("x1",x); vl.setAttribute("x2",x); cs.forEach(c=>{ c.setAttribute("cx",x); c.setAttribute("cy",y); });
+      hv.textContent = fmt(points[i].y); hs.textContent = points[i].label || "";
+    });
+    svg.addEventListener("pointerleave", ()=>{ cur.style.display = "none"; end.style.display = ""; hv.textContent = fmt(lastY); hs.textContent = restSub; });
   });
-  const line = coords.map((c,i)=> (i===0?"M":"L") + c[0].toFixed(1) + "," + c[1].toFixed(1)).join(" ");
-  const area = coords.length>1
-    ? line + ` L${coords[coords.length-1][0].toFixed(1)},${h-24} L${coords[0][0].toFixed(1)},${h-24} Z`
-    : "";
-  const dots = coords.length<=30 ? coords.map(c=>`<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="2.8" fill="${color}"></circle>`).join("") : "";
-  const first = points[0].label || "", last = points[points.length-1].label || "";
-  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto; display:block;">
-    ${area ? `<path d="${area}" fill="${color}" opacity="0.12"></path>` : ""}
-    <path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-    ${dots}
-    <text x="${pad}" y="${h-6}" font-size="10.5" fill="${CHART_COLORS.faint}">${esc(first)}</text>
-    <text x="${w-pad}" y="${h-6}" font-size="10.5" text-anchor="end" fill="${CHART_COLORS.faint}">${esc(last)}</text>
+  return `<div class="an-hero"><span class="an-hero-v" id="${id}v" data-to="${lastY}">${fmt(lastY)}</span>${n>1 ? `<span class="an-delta ${delta>=0?"up":"down"}">${delta>=0?"▲":"▼"} ${fmt(Math.abs(round2(delta)))}</span>` : ""}</div>
+  <div class="an-hero-s" id="${id}s">${esc(restSub)}</div>
+  <svg class="an-area" id="${id}" viewBox="0 0 ${w} ${h}">
+    <defs><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".30"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    ${grid}${minY<0 ? `<line class="an-zero" x1="${pad}" x2="${w-pad}" y1="${zy.toFixed(1)}" y2="${zy.toFixed(1)}"/>` : ""}
+    ${area ? `<path class="an-fade" d="${area}" fill="url(#${id}g)"/>` : ""}
+    <path class="an-stroke" d="${d}" pathLength="1" stroke="${color}"/>
+    <g class="an-cur" style="display:none"><line class="an-vl" y1="${top}" y2="${base}"/><circle r="10" fill="${color}" opacity=".18"/><circle r="4.5" fill="#fff" stroke="${color}" stroke-width="2.5"/></g>
+    <g class="an-end"><circle class="an-pulse" cx="${C[n-1][0]}" cy="${C[n-1][1]}" r="4" fill="${color}"/><circle cx="${C[n-1][0]}" cy="${C[n-1][1]}" r="4.5" fill="#fff" stroke="${color}" stroke-width="2.5"/></g>
+    <text x="${pad}" y="${h-6}">${lbl(0)}</text><text x="${w-pad}" y="${h-6}" text-anchor="end">${lbl(n-1)}</text>
   </svg>`;
 }
-function groupedBarSVG(categories, seriesA, seriesB, colorA, colorB){
-  const w = 560, h = 170, pad = 10, baseline = h - 24;
-  if(!categories.length) return `<div class="an-empty">Not enough data yet.</div>`;
-  const maxVal = Math.max(1, ...seriesA, ...seriesB);
-  const n = categories.length;
-  const groupW = (w - pad*2) / n;
-  const barW = Math.max(6, Math.min(20, (groupW - 10) / 2));
-  let bars = "";
-  categories.forEach((cat,i)=>{
-    const gx = pad + i*groupW + (groupW - (barW*2+3))/2;
-    const aH = (seriesA[i]/maxVal) * (baseline - 10);
-    const bH = (seriesB[i]/maxVal) * (baseline - 10);
-    bars += `<rect x="${gx.toFixed(1)}" y="${(baseline-aH).toFixed(1)}" width="${barW}" height="${aH.toFixed(1)}" rx="3" fill="${colorA}"></rect>`;
-    bars += `<rect x="${(gx+barW+3).toFixed(1)}" y="${(baseline-bH).toFixed(1)}" width="${barW}" height="${bH.toFixed(1)}" rx="3" fill="${colorB}"></rect>`;
-    bars += `<text x="${(gx+barW+1.5).toFixed(1)}" y="${h-6}" font-size="10" text-anchor="middle" fill="${CHART_COLORS.faint}">${esc(cat)}</text>`;
+
+/* Rounded gradient columns that spring up; hover isolates a month with a glass tooltip */
+function flowChart(cats, A, B){
+  const id = "fc"+(++chartUid), w = 560, h = 190, pad = 12, top = 10, base = h-26, n = cats.length;
+  if(!n) return `<div class="an-empty">Not enough data yet.</div>`;
+  const max = Math.max(1,...A,...B), gw = (w-pad*2)/n, bw = Math.max(5, Math.min(18,(gw-12)/2)), gap = 3;
+  const grad = (gid,c)=>`<linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}"/><stop offset="1" stop-color="${c}" stop-opacity=".62"/></linearGradient>`;
+  let g = [0,1,2].map(i=>{ const y = top+i*(base-top)/2; return `<line class="an-grid-l" x1="${pad}" x2="${w-pad}" y1="${y}" y2="${y}"/>`; }).join("");
+  cats.forEach((c,i)=>{
+    const gx = pad+i*gw+(gw-(bw*2+gap))/2, d = i*45+"ms";
+    const bar = (v,x,f)=>{ if(v<=0) return ""; const bh = Math.max(4, v/max*(base-top));
+      return `<rect class="an-bar" style="animation-delay:${d}" x="${x.toFixed(1)}" y="${(base-bh).toFixed(1)}" width="${bw}" height="${bh.toFixed(1)}" rx="${Math.min(bw/2,6)}" fill="url(#${id}${f})"/>`; };
+    g += `<g class="an-bg">${bar(A[i],gx,"a")}${bar(B[i],gx+bw+gap,"b")}<text x="${(pad+(i+.5)*gw).toFixed(1)}" y="${h-6}" text-anchor="middle">${esc(c)}</text><rect class="an-hit" x="${(pad+i*gw).toFixed(1)}" y="0" width="${gw.toFixed(1)}" height="${h}"/></g>`;
   });
-  bars += `<line x1="${pad}" y1="${baseline}" x2="${w-pad}" y2="${baseline}" stroke="${CHART_COLORS.border}" stroke-width="1"></line>`;
-  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto; display:block;">${bars}</svg>`;
+  chartWires.push(()=>{
+    const svg = document.getElementById(id), gs = svg.querySelectorAll(".an-bg");
+    const clear = ()=>{ svg.classList.remove("has-hover"); gs.forEach(x=>x.classList.remove("on")); hideTip(); };
+    svg.addEventListener("pointermove", e=>{
+      const {r,x} = svgPointer(svg,e,w), i = Math.max(0, Math.min(n-1, Math.floor((x-pad)/gw)));
+      svg.classList.add("has-hover"); gs.forEach((el,k)=>el.classList.toggle("on", k===i));
+      showTip(`<b>${esc(cats[i])}</b><div class="tp"><i style="background:${CHART_COLORS.gain}"></i>Income<span>${fmt(A[i])}</span></div><div class="tp"><i style="background:${CHART_COLORS.loss}"></i>Expense<span>${fmt(B[i])}</span></div>`,
+        r.left+(pad+(i+.5)*gw)/w*r.width, r.top+(base-Math.max(A[i],B[i])/max*(base-top))/h*r.height);
+    });
+    svg.addEventListener("pointerleave", clear);
+  });
+  const net = round2(A.reduce((s,v)=>s+v,0)-B.reduce((s,v)=>s+v,0));
+  return `<div class="an-hero"><span class="an-hero-v" data-to="${net}">${fmt(net)}</span><span class="an-delta ${net>=0?"up":"down"}">Net</span></div>
+  <div class="an-hero-s">Income ${fmt(round2(A.reduce((s,v)=>s+v,0)))} · Expense ${fmt(round2(B.reduce((s,v)=>s+v,0)))}</div>
+  <svg class="an-bars" id="${id}" viewBox="0 0 ${w} ${h}"><defs>${grad(id+"a",CHART_COLORS.gain)}${grad(id+"b",CHART_COLORS.loss)}</defs>${g}</svg>`;
 }
-function donutHtml(segments){
-  const total = segments.reduce((s,x)=>s+x.value,0);
+
+/* Rounded-cap ring with centre readout; hover a slice or legend row to focus it */
+function ringHtml(segs, label, centerVal){
+  const total = segs.reduce((s,x)=>s+x.value,0);
   if(total<=0) return `<div class="an-empty">Not enough data yet.</div>`;
-  let acc = 0;
-  const stops = segments.filter(s=>s.value>0).map(s=>{
-    const start = (acc/total*360).toFixed(2); acc += s.value;
-    const end = (acc/total*360).toFixed(2);
-    return `${s.color} ${start}deg ${end}deg`;
-  }).join(", ");
-  const legend = segments.map(s=>`
-    <div class="an-legend-row"><span class="an-legend-dot" style="background:${s.color}"></span><span class="an-legend-label">${esc(s.label)}</span><span class="an-legend-val">${esc(s.display)}</span></div>
-  `).join("");
-  return `<div class="an-donut-wrap">
-    <div class="an-donut" style="background:conic-gradient(${stops});"></div>
-    <div class="an-donut-legend">${legend}</div>
-  </div>`;
+  const id = "rg"+(++chartUid), R = 46, SW = 13, single = segs.filter(s=>s.value>0).length===1, capU = SW/(2*Math.PI*R)*100;
+  let acc = 0, arcs = "";
+  segs.forEach((s,i)=>{
+    if(s.value<=0) return;
+    const p = s.value/total*100, start = acc; acc += p;
+    const cut = single ? 0 : 1.2+capU*2, len = Math.max(.1,p-cut);
+    arcs += `<circle class="an-arc" data-i="${i}" cx="60" cy="60" r="${R}" pathLength="100" stroke="${s.color}" stroke-width="${SW}" stroke-linecap="${single?"butt":"round"}" style="stroke-dasharray:${len.toFixed(2)} ${(100-len).toFixed(2)}; stroke-dashoffset:${(-(start+cut/2)).toFixed(2)}; animation-delay:${i*90}ms"/>`;
+  });
+  const legend = segs.map((s,i)=>`<div class="an-legend-row" data-i="${i}"><span class="an-legend-dot" style="background:${s.color}"></span><span class="an-legend-label">${esc(s.label)}</span><span class="an-legend-val">${esc(s.display)}</span></div>`).join("");
+  chartWires.push(()=>{
+    const wrap = document.getElementById(id), ring = wrap.querySelector(".an-ring"), b = ring.querySelector("b"), sp = ring.querySelector("span");
+    const set = (t,l)=>{ b.textContent = t; sp.textContent = l; fitText(b); }; fitText(b);
+    wrap.querySelectorAll("[data-i]").forEach(el=>{
+      el.addEventListener("pointerenter", ()=>{
+        const i = +el.dataset.i; ring.classList.add("hov");
+        wrap.querySelectorAll("[data-i]").forEach(o=>o.classList.toggle("on", +o.dataset.i===i));
+        set(String(segs[i].display), segs[i].label);
+      });
+      el.addEventListener("pointerleave", ()=>{ ring.classList.remove("hov"); wrap.querySelectorAll(".on").forEach(o=>o.classList.remove("on")); set(String(centerVal), label); });
+    });
+  });
+  return `<div class="an-donut-wrap" id="${id}"><div class="an-ring"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)"><circle cx="60" cy="60" r="${R}" fill="none" stroke="#F1F1F4" stroke-width="${SW}"/>${arcs}</g></svg><div class="an-ring-c"><b>${esc(String(centerVal))}</b><span>${esc(label)}</span></div></div><div class="an-donut-legend">${legend}</div></div>`;
 }
+
+/* Concentric activity-style rings for goals (first four), full list beside them */
+function goalRingsHtml(goals){
+  const pal = [CHART_COLORS.accent, CHART_COLORS.gain, CHART_COLORS.violet, CHART_COLORS.amber], rs = [50,39,28,17];
+  const rings = goals.slice(0,4).map((g,i)=>{
+    const p = Math.max(0, Math.min(100, goalPct(g)));
+    return `<circle cx="60" cy="60" r="${rs[i]}" fill="none" stroke="${pal[i]}" stroke-opacity=".14" stroke-width="8"/>` +
+      (p>0 ? `<circle class="an-arc" cx="60" cy="60" r="${rs[i]}" fill="none" pathLength="100" stroke="${pal[i]}" stroke-width="8" stroke-linecap="round" style="stroke-dasharray:${p} ${100-p}; animation-delay:${i*120}ms"/>` : "");
+  }).join("");
+  const rows = goals.slice(0,8).map((g,i)=>`<div class="an-legend-row"><span class="an-legend-dot" style="background:${i<4?pal[i]:"var(--ink-faint)"}"></span><span class="an-legend-label">${esc(g.name)}</span><span class="an-legend-val">${Math.min(100,goalPct(g))}%</span></div>`).join("");
+  return `<div class="an-donut-wrap"><div class="an-ring"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)">${rings}</g></svg></div><div class="an-donut-legend">${rows}</div></div>`;
+}
+
+/* Ranked horizontal bars with initials and staggered grow-in */
 function hBarListHtml(items, color){
   if(!items.length) return `<div class="an-empty">Not enough data yet.</div>`;
   const max = Math.max(...items.map(i=>i.value), 0.01);
-  return items.map(i=>`
-    <div class="an-hbar-row">
-      <div class="an-hbar-label" title="${esc(i.label)}">${esc(i.label)}</div>
-      <div class="an-hbar-track"><div class="an-hbar-fill" style="width:${Math.max(3,(i.value/max*100)).toFixed(1)}%; background:${color};"></div></div>
-      <div class="an-hbar-val">${esc(i.display)}</div>
-    </div>
-  `).join("");
+  return items.map((i,k)=>`
+    <div class="an-br" style="--d:${k*70}ms">
+      <div class="an-br-av" style="background:${color}1f; color:${color}">${esc((i.label||"?").trim().charAt(0).toUpperCase())}</div>
+      <div class="an-br-main">
+        <div class="an-br-top"><span class="an-br-label" title="${esc(i.label)}">${esc(i.label)}</span><span class="an-br-val">${esc(i.display)}</span></div>
+        <div class="an-br-track"><div class="an-br-fill" style="width:${Math.max(3,i.value/max*100).toFixed(1)}%; background:linear-gradient(90deg, ${color}b3, ${color})"></div></div>
+      </div>
+    </div>`).join("");
 }
 function monthKey(dateStr){ return dateStr.slice(0,7); }
 function monthLabel(key){
@@ -3750,7 +3878,7 @@ function renderAnalytics(){
     <div class="an-card an-wide">
       <h3>Wallet balance over time</h3>
       <p class="an-sub">Combined balance across all wallets, from income and expenses logged${rangeNote}</p>
-      ${state.wallets.length ? sparklineSVG(walletTrendPoints, CHART_COLORS.teal) : `<div class="an-empty">Add a wallet to see this chart.</div>`}
+      ${state.wallets.length ? areaChart(walletTrendPoints, CHART_COLORS.teal) : `<div class="an-empty">Add a wallet to see this chart.</div>`}
     </div>`);
 
   // 2. Income vs expense
@@ -3785,7 +3913,7 @@ function renderAnalytics(){
     <div class="an-card an-wide">
       <h3>Income vs. expense</h3>
       <p class="an-sub">${(af.from || af.to) ? "Selected range" : "Last 6 months"}, across all wallets · <span style="color:${CHART_COLORS.gain};font-weight:700;">■</span> income &nbsp; <span style="color:${CHART_COLORS.loss};font-weight:700;">■</span> expense</p>
-      ${hasFlow ? groupedBarSVG(months.map(monthLabel), incomeByMonth, expenseByMonth, CHART_COLORS.gain, CHART_COLORS.loss) : `<div class="an-empty">Log some wallet transactions to see this chart.</div>`}
+      ${hasFlow ? flowChart(months.map(monthLabel), incomeByMonth, expenseByMonth) : `<div class="an-empty">Log some wallet transactions to see this chart.</div>`}
     </div>`);
 
   // 3. Wallet breakdown (current snapshot, not affected by the date filter)
@@ -3794,7 +3922,7 @@ function renderAnalytics(){
     <div class="an-card">
       <h3>Wallet breakdown</h3>
       <p class="an-sub">Share of your current total balance</p>
-      ${donutHtml(walletSegs)}
+      ${ringHtml(walletSegs, "Total", fmt(round2(walletSegs.reduce((x,y)=>x+y.value,0))))}
     </div>`);
 
   // 4. Loan status breakdown
@@ -3806,11 +3934,11 @@ function renderAnalytics(){
     <div class="an-card">
       <h3>Loan status</h3>
       <p class="an-sub">${filteredTx.length} transaction${filteredTx.length===1?"":"s"}${rangeNote}</p>
-      ${donutHtml([
+      ${ringHtml([
         {label:"Active", value:activeCount, color:CHART_COLORS.amber, display:activeCount},
         {label:"Completed", value:completedCount, color:CHART_COLORS.gain, display:completedCount},
         {label:"Overdue", value:overdueCount, color:CHART_COLORS.loss, display:overdueCount}
-      ])}
+      ], "Loans", filteredTx.length)}
     </div>`);
 
   // 5. Cumulative gain over time (Ledger)
@@ -3828,7 +3956,7 @@ function renderAnalytics(){
     <div class="an-card an-wide">
       <h3>Cumulative gain</h3>
       <p class="an-sub">Running total of requested minus bill${rangeNote}</p>
-      ${gainSeries.length ? sparklineSVG(gainSeries, CHART_COLORS.accent) : `<div class="an-empty">Add a Ledger transaction to see this chart.</div>`}
+      ${gainSeries.length ? areaChart(gainSeries, CHART_COLORS.accent) : `<div class="an-empty">Add a Ledger transaction to see this chart.</div>`}
     </div>`);
 
   // 6. Top borrowers by outstanding
@@ -3848,15 +3976,11 @@ function renderAnalytics(){
     <div class="an-card">
       <h3>Goals progress</h3>
       <p class="an-sub">${state.goals.length} goal${state.goals.length===1?"":"s"} tracked</p>
-      ${state.goals.length ? state.goals.map(g=>`
-        <div class="an-goal-row">
-          <div class="an-goal-top"><span class="name">${esc(g.name)}</span><span class="pct">${goalPct(g)}%</span></div>
-          <div class="progress-track"><div class="progress-fill ${goalIsComplete(g)?'complete':''}" style="width:${goalPct(g)}%"></div></div>
-        </div>
-      `).join("") : `<div class="an-empty">Set a goal to see progress here.</div>`}
+      ${state.goals.length ? goalRingsHtml(state.goals) : `<div class="an-empty">Set a goal to see progress here.</div>`}
     </div>`);
 
   grid.innerHTML = cards.join("");
+  wireCharts(grid);
   updateAnFilterCount();
 }
 
@@ -5914,9 +6038,6 @@ setTimeout(()=>{
   }
   GoogleSync.onStatusChange(refreshSyncUI);
   refreshSyncUI(GoogleSync.getStatus());
-  // tryAutoConnect() handles waiting for the Google Identity Services
-  // script itself, internally, and only if it actually needs it (a
-  // cached, still-valid access token skips that wait entirely).
   GoogleSync.tryAutoConnect();
 })();
 
