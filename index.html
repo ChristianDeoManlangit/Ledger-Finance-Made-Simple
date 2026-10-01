@@ -529,6 +529,7 @@ input[list]::-webkit-list-button{ display:none !important; }
 }
 .filter-panel.open{grid-template-rows:1fr; opacity:1; margin-bottom:18px;}
 .filter-panel > .filterbar-inner{overflow:hidden; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.filter-panel > .an-filter-content{min-height:0; overflow:hidden;}
 
 /* ---- Custom calendar ---- */
 .date-field{position:relative; display:flex;}
@@ -925,7 +926,7 @@ input[list]::-webkit-list-button{ display:none !important; }
   }
   #walletGrid.grid:not(.stacked) .wtile-balance-label{font-size:9px;}
   #walletGrid.grid:not(.stacked) .wtile-balance{font-size:16px; margin-bottom:6px;}
-  #walletGrid.grid:not(.stacked) .wtile-linked{display:none;}
+  #walletGrid.grid:not(.stacked) .wtile-linked, #walletGrid.grid:not(.stacked) .wtile-flag{display:none;}
   #goalGrid.grid:not(.stacked) .tile-badges{display:none;}
   #goalGrid.grid:not(.stacked) .progress-labels{font-size:9.5px;}
   #walletGrid.grid:not(.stacked) .pay-btn, #goalGrid.grid:not(.stacked) .pay-btn{
@@ -974,7 +975,7 @@ input[list]::-webkit-list-button{ display:none !important; }
 }
 
 /* ---- Analytics ---- */
-.an-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px;}
+.an-grid{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:24px; grid-auto-flow:row dense;}
 .an-grid > *:nth-child(1){animation-delay:.02s;}
 .an-grid > *:nth-child(2){animation-delay:.06s;}
 .an-grid > *:nth-child(3){animation-delay:.10s;}
@@ -988,7 +989,7 @@ input[list]::-webkit-list-button{ display:none !important; }
 .an-card .an-sub{font-size:13px; color:var(--ink-faint); margin:0 0 26px; line-height:1.4;}
 .an-empty{padding:48px 16px; text-align:center; color:var(--ink-faint); font-size:13px;}
 @media (max-width:520px){ .an-card{padding:20px 18px 22px;} .an-grid{gap:16px;} .an-donut-wrap{gap:20px;} }
-@media (max-width:760px){ .an-grid{grid-template-columns:minmax(0,1fr);} .an-card.an-wide{grid-column:span 1;} }
+
 
 .an-hbar-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
 .an-hbar-row:last-child{margin-bottom:0;}
@@ -1012,6 +1013,28 @@ input[list]::-webkit-list-button{ display:none !important; }
 .an-goal-top .name{font-weight:600;}
 .an-goal-top .pct{color:var(--ink-faint);}
 
+
+/* ---- Dashboard: bento layout, presets, customize mode ---- */
+.an-card{position:relative; container-type:inline-size;}
+@container (max-width:430px){ .an-donut-wrap{flex-direction:column; align-items:stretch; gap:20px;} }
+.dash-sum{margin-bottom:22px;}
+.dash-layout{display:flex; align-items:center; gap:10px 14px; flex-wrap:wrap; width:100%; padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid var(--border);}
+.dash-lbl{font-size:12px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em;}
+.dash-presets{display:flex; gap:6px; flex-wrap:wrap; flex:1; min-width:0;}
+.dash-chip{border:1px solid var(--border); background:var(--surface); border-radius:99px; padding:7px 14px; font:inherit; font-size:13px; font-weight:600; color:var(--ink-soft); cursor:pointer; transition:background .15s,color .15s;}
+.dash-chip:hover{color:var(--ink);} .dash-chip.on{background:var(--ink); color:#fff; border-color:var(--ink);}
+#dashCustomize.on{background:var(--ink); color:#fff;}
+.an-card.is-edit{outline:1.5px dashed #C7C7CC; outline-offset:-1px;} .an-card.is-edit:hover{transform:none;}
+.an-card.is-off{opacity:.45;} .an-card.dragging{opacity:.5;} .an-card.drag-over{outline:2px solid var(--accent);}
+.dash-tools{position:absolute; top:10px; right:10px; z-index:5; display:flex; align-items:center; gap:2px; background:rgba(255,255,255,.92); backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:99px; padding:3px;}
+.dash-tools button,.dash-grip{border:none; background:none; font:inherit; font-size:12px; font-weight:700; color:var(--ink-soft); min-width:26px; height:26px; border-radius:99px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0 6px;}
+.dash-grip{cursor:grab; letter-spacing:-2px; touch-action:none;}
+.dash-tools button:hover{background:var(--surface-sunk); color:var(--ink);} .dash-tools button.on{background:var(--ink); color:#fff;}
+.dash-sizes{display:flex; gap:1px; margin:0 3px; padding:0 3px; border-left:1px solid var(--border); border-right:1px solid var(--border);}
+.dash-rz{position:absolute; right:6px; bottom:6px; width:24px; height:24px; cursor:nwse-resize; touch-action:none; border-right:3px solid #AEAEB2; border-bottom:3px solid #AEAEB2; border-radius:0 0 12px 0; z-index:5;}
+@media (max-width:640px){ .dash-sizes,.dash-rz{display:none;} }
+.sub-right{display:flex; align-items:center; gap:8px;}
+.w-sort{height:36px; border-radius:99px; border:1px solid var(--border); background:var(--surface); padding:0 12px; font:inherit; font-size:13px; font-weight:500; color:var(--ink); max-width:170px;}
 /* ---- Analytics: Apple-style charts ---- */
 .an-hero{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
 .an-hero-v{font-family:var(--font-display); font-size:30px; font-weight:700; letter-spacing:-.03em; line-height:1.1; font-variant-numeric:tabular-nums;}
@@ -1185,6 +1208,10 @@ input[list]::-webkit-list-button{ display:none !important; }
 .wtile-balance-label{font-size:11px; color:var(--ink-faint); font-weight:600; text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px;}
 .wtile-balance{font-family:var(--font-display); font-size:24px; font-weight:500; letter-spacing:-.01em; font-variant-numeric:tabular-nums; margin-bottom:14px;}
 .wtile-balance.neg{color:var(--loss);}
+.wtile-bl{display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:18px;}
+.wtile-flag{font-size:10.5px; font-weight:600; text-transform:none; letter-spacing:0; color:var(--ink-faint); background:var(--surface-sunk); border:1px solid var(--border); border-radius:99px; padding:1px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+#walletGrid .tile{display:flex; flex-direction:column;}
+#walletGrid .tile > .tile-actions{margin-top:auto;}
 .wtile-linked{font-size:11.5px; color:var(--ink-faint); margin-bottom:12px;}
 
 /* ---- Activity rows (wallet transaction log, reuses pl-row skeleton) ---- */
@@ -1557,7 +1584,7 @@ input[list]::-webkit-list-button{ display:none !important; }
     <button class="tab is-active" data-view="wallets"><svg class="icon"><use href="#i-wallet"/></svg><span>Wallets</span></button>
     <button class="tab" data-view="goals"><svg class="icon"><use href="#i-target"/></svg><span>Goals</span></button>
     <button class="tab" data-view="ledger"><svg class="icon"><use href="#i-inbox"/></svg><span>Ledger</span></button>
-    <button class="tab" data-view="analytics"><svg class="icon"><use href="#i-bar-chart"/></svg><span>Analytics</span></button>
+    <button class="tab" data-view="analytics"><svg class="icon"><use href="#i-bar-chart"/></svg><span>Dashboard</span></button>
   </div>
 
   <!-- Summary -->
@@ -1570,10 +1597,10 @@ input[list]::-webkit-list-button{ display:none !important; }
         <button class="tab is-active" data-wtab="wallets">Wallets</button>
         <button class="tab" data-wtab="activity">Activity</button>
       </div>
-      <div class="view-toggle">
+      <div class="sub-right"><select id="wSort" class="w-sort" aria-label="Sort wallets"><option value="custom">My order (drag)</option><option value="alpha">Name A to Z</option><option value="high">Highest balance</option><option value="low">Lowest balance</option></select><div class="view-toggle">
         <button type="button" class="vt-btn is-active" data-viewmode="grid" title="Grid view"><svg class="icon"><use href="#i-grid"/></svg></button>
         <button type="button" class="vt-btn" data-viewmode="stacked" title="Stacked view"><svg class="icon"><use href="#i-list"/></svg></button>
-      </div>
+      </div></div>
     </div>
     <div class="grid" id="walletGrid"></div>
     <div class="blist" id="walletActivityList" style="display:none;"></div>
@@ -1651,14 +1678,18 @@ input[list]::-webkit-list-button{ display:none !important; }
 
   <!-- ============== ANALYTICS VIEW ============== -->
   <div id="analyticsView" style="display:none;">
+    <section class="summary dash-sum" id="dashSummary"></section>
     <div class="filter-toggle-row">
-      <button class="chip-btn" id="anFilterToggle"><svg class="icon"><use href="#i-slider"/></svg>Filters<span class="filter-count" id="anFilterCount" style="display:none;"></span></button>
+      <button class="chip-btn" id="anFilterToggle"><svg class="icon"><use href="#i-slider"/></svg>Filters &amp; layout<span class="filter-count" id="anFilterCount" style="display:none;"></span></button>
     </div>
     <div class="filter-panel" id="anFilterPanel">
-      <div class="filterbar filterbar-inner">
-        <div class="date-field"><input type="text" class="date-input" id="anFrom" readonly placeholder="From date"><button type="button" class="cal-trigger" data-cal-target="anFrom" aria-label="Choose from date"><svg class="icon"><use href="#i-calendar"/></svg></button></div>
-        <div class="date-field"><input type="text" class="date-input" id="anTo" readonly placeholder="To date"><button type="button" class="cal-trigger" data-cal-target="anTo" aria-label="Choose to date"><svg class="icon"><use href="#i-calendar"/></svg></button></div>
-        <button class="clear-filters" id="anClearFilters">Clear filters</button>
+      <div class="an-filter-content">
+        <div class="dash-layout"><div class="dash-lbl">Layout</div><div class="dash-presets" id="dashPresets"></div><button class="chip-btn" id="dashCustomize" type="button">Customize</button></div>
+        <div class="filterbar filterbar-inner">
+          <div class="date-field"><input type="text" class="date-input" id="anFrom" readonly placeholder="From date"><button type="button" class="cal-trigger" data-cal-target="anFrom" aria-label="Choose from date"><svg class="icon"><use href="#i-calendar"/></svg></button></div>
+          <div class="date-field"><input type="text" class="date-input" id="anTo" readonly placeholder="To date"><button type="button" class="cal-trigger" data-cal-target="anTo" aria-label="Choose to date"><svg class="icon"><use href="#i-calendar"/></svg></button></div>
+          <button class="clear-filters" id="anClearFilters">Clear filters</button>
+        </div>
       </div>
     </div>
     <div class="an-grid" id="analyticsGrid"></div>
@@ -3564,7 +3595,12 @@ function walletMenuHtml(id){
 }
 function renderWallets(){
   const grid = document.getElementById("walletGrid");
+  const wmode = state.settings.walletSort || "custom", ws = document.getElementById("wSort");
+  if(ws){ ws.value = wmode; ws.style.display = ""; }
   const list = state.wallets.slice().sort((a,b)=>(a.order||0)-(b.order||0));
+  if(wmode==="alpha") list.sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""), undefined, {sensitivity:"base"}));
+  else if(wmode==="high") list.sort((a,b)=>walletBalance(b)-walletBalance(a));
+  else if(wmode==="low") list.sort((a,b)=>walletBalance(a)-walletBalance(b));
   if(list.length === 0){
     grid.innerHTML = emptyState("wallet", "No wallets yet", "Add your cash, e-wallets, or bank accounts to start tracking real balances.", true, "Add wallet", "emptyAddWalletBtn");
     return;
@@ -3574,7 +3610,7 @@ function renderWallets(){
     const ti = walletTypeInfo(w.type);
     const linkedCount = fundedLoans().filter(t=>t.fundingWalletId===w.id && !isComplete(t)).length;
     return `
-    <div class="tile" data-wid="${w.id}" ${w.id===TOUR_DEMO_WALLET_ID ? 'data-tour-wallet-demo="1"' : ''}>
+    <div class="tile" data-wid="${w.id}" ${wmode==="custom" ? 'draggable="true"' : ''} ${w.id===TOUR_DEMO_WALLET_ID ? 'data-tour-wallet-demo="1"' : ''}>
       <div class="tile-top">
         <div class="wtile-top" style="margin-bottom:0;">
           <div class="wtile-icon ${walletTypeClass(w.type)}">${w.providerId && providerById(w.providerId) ? providerAvatarHtml(providerById(w.providerId), 22) : `<svg class="icon"><use href="#${w.icon || ti.icon}"/></svg>`}</div>
@@ -3588,9 +3624,8 @@ function renderWallets(){
           ${openMenuId===("w:"+w.id) ? walletMenuHtml(w.id) : ""}
         </div>
       </div>
-      <div class="wtile-balance-label">Balance</div>
+      <div class="wtile-balance-label wtile-bl"><span>Balance</span>${w.includeInNetWorth===false ? `<span class="wtile-flag">Not counted in net worth</span>` : ``}</div>
       <div class="wtile-balance ${bal<0?"neg":""}">${fmt(bal)}</div>
-      ${w.includeInNetWorth===false ? `<div class="wtile-linked">Not counted in net worth</div>` : ``}
       ${w.interestRate>0 ? `<div class="wtile-linked">${w.interestRate.toFixed(2)}% p.a. &middot; ${netInterestRate(w).toFixed(2)}% net${w.withholdingTax?" (20% WT)":""} &middot; ~${fmt(round2(bal*netInterestRate(w)/100))}/yr</div>` : ``}
       ${linkedCount ? `<div class="wtile-linked">${linkedCount} open loan${linkedCount===1?"":"s"} funded from here</div>` : ``}
       <div class="tile-actions">
@@ -3604,6 +3639,7 @@ function renderWallets(){
    RENDER, WALLET ACTIVITY (all wallet transactions, newest first)
    ============================================================ */
 function renderWalletActivity(){
+  { const ws = document.getElementById("wSort"); if(ws) ws.style.display = "none"; }
   const container = document.getElementById("walletActivityList");
   const list = state.walletTransactions.slice().sort((a,b)=> a.date < b.date ? 1 : a.date > b.date ? -1 : (b.order||0)-(a.order||0));
   if(list.length === 0){
@@ -3767,13 +3803,15 @@ function fitText(el){ const n = el.textContent.length; el.style.fontSize = (n>12
 function wireCharts(root){
   hideTip();
   root.querySelectorAll("[data-to]").forEach(countUp);
-  chartWires.splice(0).forEach(f=>f());
+  chartWires.splice(0).forEach(f=>{ try{ f(); }catch(err){ /* chart belongs to a hidden card that is not in the DOM */ } });
 }
 var _anW = 0;
 /* Real drawable width of a full-width analytics card, so SVG charts render 1:1 (no stretching on desktop, no shrinking on phones) */
+var _cardSpan = 12;
 function anW(){
   const g = document.getElementById("analyticsGrid"), gw = g && g.clientWidth ? g.clientWidth : 640;
-  return Math.max(260, Math.min(1400, Math.round(gw - (window.innerWidth<=520 ? 38 : 62))));
+  const gap = window.innerWidth<=520 ? 16 : 24, sp = _cardSpan || 12, col = (gw - 11*gap)/12;
+  return Math.max(220, Math.min(1400, Math.round(col*sp + (sp-1)*gap - (window.innerWidth<=520 ? 38 : 62))));
 }
 function svgPointer(svg, e, w){ const r = svg.getBoundingClientRect(); return {r, x:(e.clientX-r.left)/r.width*w}; }
 
@@ -3889,7 +3927,7 @@ function goalRingsHtml(goals){
 /* Wallet flow: Total wallet balance -> each wallet. Layout by d3-sankey (BSD-3, bundled above); drawn at 1:1 pixel scale. */
 function walletSankeyHtml(wallets){
   const {sankey, sankeyLinkHorizontal} = window.d3Sankey;
-  const id = "sk"+(++chartUid), W = anW(), mob = W < 500, NW = mob ? 10 : 14;
+  const id = "sk"+(++chartUid), W = anW(), mob = W < 620, NW = mob ? 10 : 14;
   const X1 = mob ? W - 150 - NW : W - 330 - NW;
   const ws = wallets.map((w,i)=>({name:w.name, bal:walletBalance(w), color:Object.values(CHART_COLORS)[i%6]})).sort((x,y)=>y.bal-x.bal);
   const total = round2(ws.reduce((x,w)=>x+w.bal,0)), pos = ws.reduce((x,w)=>x+Math.max(0,w.bal),0);
@@ -3947,13 +3985,69 @@ function monthLabel(key){
   const [y,m] = key.split("-").map(Number);
   return new Date(y, m-1, 1).toLocaleDateString(undefined, {month:"short"});
 }
+
+/* ============================================================
+   DASHBOARD LAYOUT ENGINE, 12-column bento grid, presets, customize
+   ============================================================ */
+const DASH_KEYS = ["bal","inc","wb","cum","loan","bor","goal","gb"];
+const _all = n => Object.fromEntries(DASH_KEYS.map(k=>[k,n]));
+const DASH_PRESETS = {
+  classic:{name:"Classic", desc:"Wide charts, then pairs", order:DASH_KEYS, spans:{bal:12,inc:12,wb:12,cum:12,loan:6,bor:6,goal:6,gb:6}},
+  bento:{name:"Bento", desc:"Mixed tile sizes", order:["bal","loan","inc","wb","goal","cum","bor","gb"], spans:{bal:8,loan:4,inc:4,wb:8,goal:4,cum:8,bor:6,gb:6}},
+  grid:{name:"Grid", desc:"Two even columns", order:DASH_KEYS, spans:_all(6)},
+  stacked:{name:"Stacked", desc:"One chart per row", order:DASH_KEYS, spans:_all(12)},
+  columns:{name:"Columns", desc:"Three-up tiles", order:["bal","inc","loan","goal","cum","bor","gb","wb"], spans:{bal:12,inc:4,loan:4,goal:4,cum:4,bor:4,gb:4,wb:12}}
+};
+let _dashEdit = false, _cardKey = "", _cards = {};
+function dashState(){ return state.settings.dash || (state.settings.dash = {preset:"classic"}); }
+function dashCfg(){
+  const d = dashState(), c = d.preset==="custom" && d.custom ? d.custom : null, p = c || DASH_PRESETS[d.preset] || DASH_PRESETS.classic;
+  const order = p.order.filter(k=>DASH_KEYS.includes(k)); DASH_KEYS.forEach(k=>{ if(!order.includes(k)) order.push(k); });
+  return {order, spans:Object.assign({}, p.spans), hidden:(c && c.hidden) ? c.hidden.slice() : []};
+}
+function dashMakeCustom(){
+  const d = dashState();
+  if(d.preset !== "custom" || !d.custom){ const c = dashCfg(); d.custom = {order:c.order, spans:c.spans, hidden:[]}; d.preset = "custom"; }
+  return d.custom;
+}
+function effSpan(sp){ const w = window.innerWidth; return w<=640 ? 12 : (w<=900 ? Math.max(6, sp) : sp); }
+function setCard(k){ _cardKey = k; _cardSpan = effSpan(dashCfg().spans[k] || 12); }
+function pushCard(html){
+  const k = _cardKey, cfg = dashCfg(), sp = dashCfg().spans[k] || 12, off = cfg.hidden.includes(k);
+  const tools = _dashEdit ? `<div class="dash-tools"><span class="dash-grip" title="Drag to move">⋮⋮</span><button data-dmv="-1" title="Move earlier">↑</button><button data-dmv="1" title="Move later">↓</button><div class="dash-sizes">${[4,6,8,12].map(n=>`<button data-dsz="${n}" class="${sp===n?"on":""}" title="${n} of 12 columns">${{4:"S",6:"M",8:"L",12:"XL"}[n]}</button>`).join("")}</div><button data-dhide title="${off?"Show":"Hide"}">${off?"Show":"Hide"}</button></div><div class="dash-rz" title="Drag to resize"></div>` : "";
+  _cards[k] = html.replace(/<div class="an-card( an-wide)?">/, `<div class="an-card${_dashEdit?" is-edit":""}${off?" is-off":""}" data-k="${k}" style="grid-column:span ${effSpan(sp)}">${tools}`);
+}
+function renderDashSummary(){
+  const el = document.getElementById("dashSummary"); if(!el) return;
+  const bal = round2(state.wallets.reduce((x,w)=>x+walletBalance(w),0));
+  const saved = round2(state.goals.reduce((x,g)=>x+goalSaved(g),0)), target = round2(state.goals.reduce((x,g)=>x+(g.targetAmount||0),0));
+  const pct = target>0 ? Math.min(100, Math.round(saved/target*100)) : 0, reached = state.goals.filter(goalIsComplete).length;
+  const tx = state.transactions, out = round2(tx.filter(t=>!isComplete(t)).reduce((x,t)=>x+remaining(t),0));
+  const act = tx.filter(t=>statusOf(t)==="active").length, od = tx.filter(t=>statusOf(t)==="overdue").length;
+  const gain = round2(tx.reduce((x,t)=>x+gainOf(t),0));
+  const tile = (cls,ic,l,v,f,neg)=>`<div class="stat-tile ${cls}"><div class="stat-icon"><svg class="icon"><use href="#${ic}"/></svg></div><div class="stat-label">${l}</div><div class="stat-value ${neg?"neg":""}">${v}</div><div class="stat-foot">${f}</div></div>`;
+  el.innerHTML = tile("lent","i-wallet","Wallet balance",fmt(bal),`${state.wallets.length} wallet${state.wallets.length===1?"":"s"}`,bal<0)
+    + tile("active","i-target","Goals saved",fmt(saved),`${pct}% of ${fmt(target)} · ${reached}/${state.goals.length} reached`)
+    + tile("collect","i-arrow-ur","Ledger outstanding",fmt(out),`${act} active · ${od} overdue`)
+    + tile("gain","i-trend","Ledger net gain",fmt(gain),`Across ${tx.length} transaction${tx.length===1?"":"s"}`,gain<0);
+  fitStatValues();
+}
+function renderDashPresets(){
+  const el = document.getElementById("dashPresets"); if(!el) return;
+  const d = dashState();
+  el.innerHTML = Object.entries(DASH_PRESETS).map(([k,p])=>`<button type="button" class="dash-chip ${d.preset===k?"on":""}" data-dpreset="${k}" title="${p.desc}">${p.name}</button>`).join("")
+    + (d.custom ? `<button type="button" class="dash-chip ${d.preset==="custom"?"on":""}" data-dpreset="custom" title="Your own arrangement">Custom</button>` : "");
+  const b = document.getElementById("dashCustomize"); if(b){ b.classList.toggle("on",_dashEdit); b.textContent = _dashEdit ? "Done" : "Customize"; }
+}
 function renderAnalytics(){
   const grid = document.getElementById("analyticsGrid");
   _anW = grid.clientWidth;
-  const cards = [];
+  _cards = {};
+  renderDashSummary(); renderDashPresets();
   const af = state.analyticsFilters || {from:"", to:""};
   const rangeNote = (af.from || af.to) ? ` · ${af.from ? fmtDate(af.from) : "start"} to ${af.to ? fmtDate(af.to) : "now"}` : "";
 
+  setCard("bal");
   // 1. Wallet balance over time
   const allWalletEvents = state.walletTransactions
     .filter(wt=>wt.type==="income" || wt.type==="expense")
@@ -3974,13 +4068,14 @@ function renderAnalytics(){
     return {y:running, label:fmtDate(d).replace(/, \d{4}$/,"")};
   });
   const walletTrendPoints = walletSeries.length ? [{y:rangeBaseline, label:af.from ? "Start" : "Start"}, ...walletSeries] : (state.wallets.length ? [{y:rangeBaseline, label:"Now"}] : []);
-  cards.push(`
+  pushCard(`
     <div class="an-card an-wide">
       <h3>Wallet balance over time</h3>
       <p class="an-sub">Combined balance across all wallets, from income and expenses logged${rangeNote}</p>
       ${state.wallets.length ? areaChart(walletTrendPoints, CHART_COLORS.teal) : `<div class="an-empty">Add a wallet to see this chart.</div>`}
     </div>`);
 
+  setCard("inc");
   // 2. Income vs expense
   let months;
   if(af.from || af.to){
@@ -4009,21 +4104,23 @@ function renderAnalytics(){
   const incomeByMonth = months.map(mk => round2(state.walletTransactions.filter(wt=>wt.type==="income" && monthKey(wt.date)===mk).reduce((s,wt)=>s+wt.amount,0)));
   const expenseByMonth = months.map(mk => round2(state.walletTransactions.filter(wt=>wt.type==="expense" && monthKey(wt.date)===mk).reduce((s,wt)=>s+wt.amount,0)));
   const hasFlow = incomeByMonth.some(v=>v>0) || expenseByMonth.some(v=>v>0);
-  cards.push(`
+  pushCard(`
     <div class="an-card an-wide">
       <h3>Income vs. expense</h3>
       <p class="an-sub">${(af.from || af.to) ? "Selected range" : "Last 6 months"}, across all wallets · <span style="color:${CHART_COLORS.gain};font-weight:700;">■</span> income &nbsp; <span style="color:${CHART_COLORS.loss};font-weight:700;">■</span> expense</p>
       ${hasFlow ? flowChart(months.map(monthLabel), incomeByMonth, expenseByMonth) : `<div class="an-empty">Log some wallet transactions to see this chart.</div>`}
     </div>`);
 
+  setCard("wb");
   // 3. Wallet breakdown (current snapshot, not affected by the date filter)
-  cards.push(`
+  pushCard(`
     <div class="an-card an-wide">
       <h3>Wallet breakdown</h3>
       <p class="an-sub">How your total balance splits across wallets</p>
       ${state.wallets.length ? walletSankeyHtml(state.wallets) : `<div class="an-empty">Add a wallet to see this chart.</div>`}
     </div>`);
 
+  setCard("cum");
   // 5. Cumulative gain over time (Ledger)
   const allGainEvents = state.transactions.slice().sort((a,b)=> a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
   const gainBaseline = round2(allGainEvents.filter(t=> af.from && t.date < af.from).reduce((s,t)=>s+gainOf(t),0));
@@ -4035,19 +4132,20 @@ function renderAnalytics(){
     cum = round2(cum + gainByDate[d]);
     return {y:cum, label:fmtDate(d).replace(/, \d{4}$/,"")};
   });
-  cards.push(`
+  pushCard(`
     <div class="an-card an-wide">
       <h3>Cumulative gain</h3>
       <p class="an-sub">Running total of requested minus bill${rangeNote}</p>
       ${gainSeries.length ? areaChart(gainSeries, CHART_COLORS.accent) : `<div class="an-empty">Add a Ledger transaction to see this chart.</div>`}
     </div>`);
 
+  setCard("loan");
   // 4. Loan status breakdown
   const filteredTx = state.transactions.filter(t=> (!af.from || t.date>=af.from) && (!af.to || t.date<=af.to));
   const activeCount = filteredTx.filter(t=>statusOf(t)==="active").length;
   const completedCount = filteredTx.filter(t=>statusOf(t)==="completed").length;
   const overdueCount = filteredTx.filter(t=>statusOf(t)==="overdue").length;
-  cards.push(`
+  pushCard(`
     <div class="an-card">
       <h3>Loan status</h3>
       <p class="an-sub">${filteredTx.length} transaction${filteredTx.length===1?"":"s"}${rangeNote}</p>
@@ -4058,35 +4156,38 @@ function renderAnalytics(){
       ], "Loans", filteredTx.length)}
     </div>`);
 
+  setCard("bor");
   // 6. Top borrowers by outstanding
   const byBorrower = {};
   filteredTx.filter(t=>!isComplete(t)).forEach(t=>{ byBorrower[t.name] = (byBorrower[t.name]||0) + remaining(t); });
   const topBorrowers = Object.entries(byBorrower).map(([name,val])=>({label:name, value:val, display:fmt(round2(val))}))
     .sort((a,b)=>b.value-a.value).slice(0,6);
-  cards.push(`
+  pushCard(`
     <div class="an-card">
       <h3>Top borrowers</h3>
       <p class="an-sub">By outstanding amount${rangeNote}</p>
       ${hBarListHtml(topBorrowers, CHART_COLORS.violet)}
     </div>`);
 
+  setCard("goal");
   // 7. Goals progress (current snapshot, not affected by the date filter)
-  cards.push(`
+  pushCard(`
     <div class="an-card">
       <h3>Goals progress</h3>
       <p class="an-sub">${state.goals.length} goal${state.goals.length===1?"":"s"} tracked</p>
       ${state.goals.length ? goalRingsHtml(state.goals) : `<div class="an-empty">Set a goal to see progress here.</div>`}
     </div>`);
 
+  setCard("gb");
   // 8. Goal breakdown (saved vs target)
-  cards.push(`
+  pushCard(`
     <div class="an-card">
       <h3>Goal breakdown</h3>
       <p class="an-sub">Saved vs. target for each goal</p>
       ${state.goals.length ? goalBarsHtml(state.goals) : `<div class="an-empty">Set a goal to see progress here.</div>`}
     </div>`);
 
-  grid.innerHTML = cards.join("");
+  { const cfg = dashCfg(); grid.innerHTML = cfg.order.filter(k=>_cards[k] && (_dashEdit || !cfg.hidden.includes(k))).map(k=>_cards[k]).join(""); }
   wireCharts(grid);
   updateAnFilterCount();
 }
@@ -5279,6 +5380,71 @@ function updateAnFilterCount(){
   else { badge.style.display="none"; }
 }
 
+
+/* ============================================================
+   WALLET SORT + DRAG TO REORDER (custom order)
+   ============================================================ */
+document.getElementById("wSort").addEventListener("change", (e)=>{
+  state.settings.walletSort = e.target.value; persist(); renderWallets();
+});
+(function(){
+  const g = document.getElementById("walletGrid"); let src = null;
+  g.addEventListener("dragstart",(e)=>{ const t = e.target.closest('.tile[draggable="true"]'); if(!t) return; src = t.getAttribute("data-wid"); t.classList.add("dragging"); e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setData("text/plain",src); }catch(_){} });
+  g.addEventListener("dragend",()=>{ g.querySelectorAll(".tile").forEach(t=>t.classList.remove("dragging","drag-over")); src = null; });
+  g.addEventListener("dragover",(e)=>{ const t = e.target.closest('.tile[draggable="true"]'); if(!t || !src) return; e.preventDefault(); g.querySelectorAll(".drag-over").forEach(x=>x.classList.remove("drag-over")); if(t.getAttribute("data-wid")!==src) t.classList.add("drag-over"); });
+  g.addEventListener("drop",(e)=>{
+    const t = e.target.closest('.tile[draggable="true"]'); if(!t || !src) return; e.preventDefault();
+    const to = t.getAttribute("data-wid"); if(to===src) return;
+    const list = state.wallets.slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    const from = list.findIndex(w=>w.id===src); if(from<0) return;
+    const [it] = list.splice(from,1); const ti = list.findIndex(w=>w.id===to); list.splice(ti<0?list.length:ti,0,it);
+    list.forEach((w,i)=>{ w.order = i; }); persist(); renderWallets();
+  });
+})();
+
+/* ============================================================
+   DASHBOARD: presets, customize mode, drag / resize / size / hide
+   ============================================================ */
+(function(){
+  const grid = document.getElementById("analyticsGrid");
+  const edit = (fn)=>{ const c = dashMakeCustom(); fn(c); persist(); renderAnalytics(); };
+  document.getElementById("dashPresets").addEventListener("click",(e)=>{
+    const b = e.target.closest("[data-dpreset]"); if(!b) return;
+    dashState().preset = b.getAttribute("data-dpreset"); persist(); renderAnalytics();
+  });
+  document.getElementById("dashCustomize").addEventListener("click",()=>{
+    _dashEdit = !_dashEdit; if(_dashEdit) document.getElementById("anFilterPanel").classList.add("open"); renderAnalytics();
+  });
+  grid.addEventListener("click",(e)=>{
+    const card = e.target.closest(".an-card.is-edit"); if(!card) return; const k = card.dataset.k;
+    const sz = e.target.closest("[data-dsz]"), mv = e.target.closest("[data-dmv]"), hd = e.target.closest("[data-dhide]");
+    if(sz) edit(c=>{ c.spans[k] = +sz.getAttribute("data-dsz"); });
+    else if(mv) edit(c=>{ const i = c.order.indexOf(k), j = i + (+mv.getAttribute("data-dmv")); if(i>=0 && j>=0 && j<c.order.length){ [c.order[i],c.order[j]] = [c.order[j],c.order[i]]; } });
+    else if(hd) edit(c=>{ c.hidden = c.hidden || []; const i = c.hidden.indexOf(k); if(i>=0) c.hidden.splice(i,1); else c.hidden.push(k); });
+  });
+  /* corner handle: live column-snapped resize; grip: HTML5 drag to reorder */
+  grid.addEventListener("pointerdown",(e)=>{
+    const grip = e.target.closest(".dash-grip"); if(grip){ grip.closest(".an-card").draggable = true; return; }
+    const rz = e.target.closest(".dash-rz"); if(!rz) return;
+    e.preventDefault();
+    const card = rz.closest(".an-card"), k = card.dataset.k, gap = window.innerWidth<=520 ? 16 : 24;
+    const col = (grid.clientWidth - 11*gap)/12, x0 = e.clientX, s0 = dashCfg().spans[k] || 12; let cur = s0;
+    try{ rz.setPointerCapture(e.pointerId); }catch(_){}
+    const mv = (ev)=>{ cur = Math.max(3, Math.min(12, Math.round(s0 + (ev.clientX - x0)/(col+gap)))); card.style.gridColumn = "span " + cur; };
+    const up = ()=>{ rz.removeEventListener("pointermove",mv); rz.removeEventListener("pointerup",up); rz.removeEventListener("pointercancel",up); if(cur!==s0) edit(c=>{ c.spans[k] = cur; }); else renderAnalytics(); };
+    rz.addEventListener("pointermove",mv); rz.addEventListener("pointerup",up); rz.addEventListener("pointercancel",up);
+  });
+  let dk = null;
+  grid.addEventListener("dragstart",(e)=>{ const c = e.target.closest && e.target.closest(".an-card.is-edit"); if(!c || !c.draggable) return; dk = c.dataset.k; c.classList.add("dragging"); e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setData("text/plain",dk); }catch(_){} });
+  grid.addEventListener("dragend",()=>{ grid.querySelectorAll(".an-card").forEach(c=>{ c.draggable = false; c.classList.remove("dragging","drag-over"); }); dk = null; });
+  grid.addEventListener("dragover",(e)=>{ const c = e.target.closest(".an-card.is-edit"); if(!c || !dk) return; e.preventDefault(); grid.querySelectorAll(".drag-over").forEach(x=>x.classList.remove("drag-over")); if(c.dataset.k!==dk) c.classList.add("drag-over"); });
+  grid.addEventListener("drop",(e)=>{
+    const c = e.target.closest(".an-card.is-edit"); if(!c || !dk) return; e.preventDefault();
+    const to = c.dataset.k, from = dk; if(to===from) return;
+    edit(cfg=>{ const o = cfg.order.filter(x=>x!==from), i = o.indexOf(to); o.splice(i<0?o.length:i,0,from); cfg.order = o; });
+  });
+})();
+
 /* Mobile search toggle */
 document.getElementById("searchToggle").addEventListener("click", ()=>{
   const box = document.getElementById("searchBox");
@@ -5896,7 +6062,7 @@ const TOUR_STEPS = [
   { view:"ledger", spot:"#filterToggle", title:"Filter & sort", body:"Narrow things down by type, status, carrier, borrower, or date, or drag tiles into your own order." },
   { view:"ledger", spot:"[data-tab='borrowers']", title:"Borrowers view", body:"See everyone you've lent to in one list, sorted by who owes the most." },
   { view:"ledger", spot:"[data-tab='completed']", title:"Completed history", body:"Fully paid-off loans move here, out of your active Transactions list, so your history stays organized." },
-  { view:"analytics", spot:"#viewTabs", title:"Analytics", body:"Charts for wallet balance over time, income vs. expense, loan status, top borrowers, and goal progress, all in one place. Use the filters here to narrow it down to a date range." },
+  { view:"analytics", spot:"#viewTabs", title:"Dashboard", body:"Charts for wallet balance over time, income vs. expense, loan status, top borrowers, and goal progress, all in one place. Use the filters here to narrow it down to a date range." },
   { spot:"#settingsBtn", title:"Settings", body:"Export or import your data, set your currency symbol, replay this tour, or reset everything from here." }
 ];
 let tourStepIdx = 0;
@@ -6134,7 +6300,7 @@ setTimeout(()=>{
 }, 3100);
 
 (async function boot(){
-  [["fType","pill"],["fStatus","pill"],["fCarrier","pill"],["fBorrower","pill"],["fSort","pill"],
+  [["fType","pill"],["fStatus","pill"],["fCarrier","pill"],["fBorrower","pill"],["fSort","pill"],["wSort","pill"],
    ["fiWallet","field"],["wtxWallet","field"],["wtxToWallet","field"],["giWallet","field"],["payWallet","field"],
    ["dueSort","pill"]
   ].forEach(([id,style])=>{
