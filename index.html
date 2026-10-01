@@ -934,6 +934,36 @@ input[list]::-webkit-list-button{ display:none !important; }
   #walletGrid.grid:not(.stacked) .pay-btn .icon, #goalGrid.grid:not(.stacked) .pay-btn .icon{width:14px;height:14px;}
 }
 
+/* ---- Ledger tiles: real 2-col grid on phones, with a simplified tile ----
+   Grid mode keeps two columns; each tile drops secondary detail (type badge,
+   avatar, dates, Bill amount, progress caption, button label) so it fits.
+   Stacked mode and desktop are untouched. */
+@media (max-width:640px){
+  #txGrid.grid:not(.stacked), #completedGrid.grid:not(.stacked){grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px;}
+  #txGrid.grid:not(.stacked) .tile, #completedGrid.grid:not(.stacked) .tile{padding:12px; min-width:0;}
+  #txGrid.grid:not(.stacked) .tile-top, #completedGrid.grid:not(.stacked) .tile-top{margin-bottom:8px; padding-right:24px;}
+  #txGrid.grid:not(.stacked) .kebab-wrap, #completedGrid.grid:not(.stacked) .kebab-wrap{position:absolute; top:8px; right:8px;}
+  #txGrid.grid:not(.stacked) .tile-item, #completedGrid.grid:not(.stacked) .tile-item{font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  #txGrid.grid:not(.stacked) .tile-carrier, #completedGrid.grid:not(.stacked) .tile-carrier{font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  #txGrid.grid:not(.stacked) .tile-badges, #completedGrid.grid:not(.stacked) .tile-badges{margin-bottom:8px; gap:4px;}
+  #txGrid.grid:not(.stacked) .tile-badges .badge:first-child, #completedGrid.grid:not(.stacked) .tile-badges .badge:first-child{display:none;}
+  #txGrid.grid:not(.stacked) .tile-badges .badge, #completedGrid.grid:not(.stacked) .tile-badges .badge{font-size:10px; padding:2px 7px;}
+  #txGrid.grid:not(.stacked) .tile-person, #completedGrid.grid:not(.stacked) .tile-person{margin-bottom:8px; gap:6px;}
+  #txGrid.grid:not(.stacked) .tile-person .avatar, #completedGrid.grid:not(.stacked) .tile-person .avatar{width:22px; height:22px; font-size:10px;}
+  #txGrid.grid:not(.stacked) .person-name, #completedGrid.grid:not(.stacked) .person-name{font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  #txGrid.grid:not(.stacked) .person-date, #completedGrid.grid:not(.stacked) .person-date{display:none;}
+  #txGrid.grid:not(.stacked) .tile-amounts, #completedGrid.grid:not(.stacked) .tile-amounts{margin-bottom:8px; gap:6px;}
+  #txGrid.grid:not(.stacked) .amt-block:first-child, #completedGrid.grid:not(.stacked) .amt-block:first-child{display:none;}
+  #txGrid.grid:not(.stacked) .amt-block:nth-child(2), #completedGrid.grid:not(.stacked) .amt-block:nth-child(2){text-align:left;}
+  #txGrid.grid:not(.stacked) .amt-label, #completedGrid.grid:not(.stacked) .amt-label{font-size:9px;}
+  #txGrid.grid:not(.stacked) .amt-value, #completedGrid.grid:not(.stacked) .amt-value{font-size:13px;}
+  #txGrid.grid:not(.stacked) .progress-row, #completedGrid.grid:not(.stacked) .progress-row{margin-bottom:8px;}
+  #txGrid.grid:not(.stacked) .progress-labels span:first-child, #completedGrid.grid:not(.stacked) .progress-labels span:first-child{display:none;}
+  #txGrid.grid:not(.stacked) .progress-labels, #completedGrid.grid:not(.stacked) .progress-labels{justify-content:flex-end; font-size:10px;}
+  #txGrid.grid:not(.stacked) .pay-btn, #completedGrid.grid:not(.stacked) .pay-btn{font-size:0; padding:8px; justify-content:center; gap:0;}
+  #txGrid.grid:not(.stacked) .pay-btn .icon, #completedGrid.grid:not(.stacked) .pay-btn .icon{width:14px; height:14px;}
+}
+
 /* ---- Ledger tiles: tighter, not squeezed into columns ---- */
 @media (max-width:480px){
   #txGrid .tile{padding:14px;}
@@ -944,19 +974,20 @@ input[list]::-webkit-list-button{ display:none !important; }
 }
 
 /* ---- Analytics ---- */
-.an-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;}
+.an-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px;}
 .an-grid > *:nth-child(1){animation-delay:.02s;}
 .an-grid > *:nth-child(2){animation-delay:.06s;}
 .an-grid > *:nth-child(3){animation-delay:.10s;}
 .an-grid > *:nth-child(4){animation-delay:.14s;}
 .an-grid > *:nth-child(5){animation-delay:.18s;}
 .an-grid > *:nth-child(n+6){animation-delay:.22s;}
-.an-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-l); padding:18px; box-shadow:var(--shadow-1); animation:tileIn .35s var(--ease) both; transition:box-shadow .2s var(--ease), transform .2s var(--ease);}
+.an-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-l); padding:28px 30px 30px; box-shadow:var(--shadow-1); animation:tileIn .35s var(--ease) both; transition:box-shadow .2s var(--ease), transform .2s var(--ease);}
 .an-card:hover{box-shadow:var(--shadow-2); transform:translateY(-2px);}
 .an-card.an-wide{grid-column:span 2;}
-.an-card h3{margin:0 0 4px; font-size:14px; font-weight:700;}
-.an-card .an-sub{font-size:12px; color:var(--ink-faint); margin:0 0 16px;}
-.an-empty{padding:30px 10px; text-align:center; color:var(--ink-faint); font-size:13px;}
+.an-card h3{margin:0 0 6px; font-size:16px; font-weight:700; letter-spacing:-.01em;}
+.an-card .an-sub{font-size:13px; color:var(--ink-faint); margin:0 0 26px; line-height:1.4;}
+.an-empty{padding:48px 16px; text-align:center; color:var(--ink-faint); font-size:13px;}
+@media (max-width:520px){ .an-card{padding:20px 18px 22px;} .an-grid{gap:16px;} .an-donut-wrap{gap:20px;} }
 @media (max-width:760px){ .an-grid{grid-template-columns:minmax(0,1fr);} .an-card.an-wide{grid-column:span 1;} }
 
 .an-hbar-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
@@ -966,10 +997,10 @@ input[list]::-webkit-list-button{ display:none !important; }
 .an-hbar-fill{height:100%; border-radius:99px;}
 .an-hbar-val{width:78px; flex-shrink:0; text-align:right; font-size:12.5px; font-weight:700; font-variant-numeric:tabular-nums;}
 
-.an-donut-wrap{display:flex; align-items:center; gap:20px;}
+.an-donut-wrap{display:flex; align-items:center; gap:32px; padding:4px 0;}
 .an-donut{width:120px; height:120px; border-radius:50%; flex-shrink:0; position:relative;}
 .an-donut::after{content:""; position:absolute; inset:16px; border-radius:50%; background:var(--surface);}
-.an-donut-legend{flex:1; display:flex; flex-direction:column; gap:8px;}
+.an-donut-legend{flex:1; display:flex; flex-direction:column; gap:14px;}
 .an-legend-row{display:flex; align-items:center; gap:8px; font-size:12.5px;}
 .an-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .an-legend-label{flex:1; color:var(--ink-soft);}
@@ -988,7 +1019,7 @@ input[list]::-webkit-list-button{ display:none !important; }
 .an-delta{font-size:12px; font-weight:700; padding:3px 9px; border-radius:99px; font-variant-numeric:tabular-nums;}
 .an-delta.up{color:var(--gain); background:var(--gain-tint);}
 .an-delta.down{color:var(--loss); background:var(--loss-tint);}
-.an-card svg text{font-family:var(--font-ui); font-size:10.5px; fill:var(--ink-faint);}
+.an-card svg text{font-family:var(--font-ui); font-size:11.5px; fill:var(--ink-faint);}
 .an-area,.an-bars{width:100%; height:auto; display:block; overflow:visible; touch-action:pan-y; cursor:crosshair;}
 .an-grid-l{stroke:var(--border); stroke-width:1; stroke-dasharray:2 5; stroke-linecap:round;}
 .an-zero{stroke:var(--border-strong); stroke-width:1;}
@@ -1000,6 +1031,23 @@ input[list]::-webkit-list-button{ display:none !important; }
 .an-bg{transition:opacity .2s;} .an-hit{fill:transparent;}
 .an-bars.has-hover .an-bg:not(.on){opacity:.3;}
 .an-bg.on text{fill:var(--ink); font-weight:600;}
+.an-sk{width:100%; max-width:100%; height:auto; display:block; overflow:visible; margin:4px 0;}
+.an-card .an-sk .an-sk-amt{font-size:16px; font-weight:700; fill:var(--ink); letter-spacing:-.01em; font-variant-numeric:tabular-nums;}
+.an-card .an-sk .an-sk-n{font-size:14px; font-weight:600; fill:var(--ink); letter-spacing:-.01em;}
+.an-card .an-sk .an-sk-t{font-size:11.5px; font-weight:600; fill:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;}
+.an-card .an-sk .an-sk-tv{font-size:20px; font-weight:700; fill:var(--ink); letter-spacing:-.02em;}
+.an-card .an-sk .an-sk-v{font-size:12.5px; font-weight:500; fill:var(--ink-faint); font-variant-numeric:tabular-nums;}
+.an-sk-link{stroke-dasharray:1; animation:skDraw 1s var(--ease) both; transition:opacity .2s;}
+.an-sk:hover .an-sk-link{opacity:.55;} .an-sk .an-sk-link:hover{opacity:1;}
+.an-sk-node{transform-box:fill-box; transform-origin:50% 0; animation:barY .7s var(--ease-spring) both;}
+@keyframes skDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes barY{from{transform:scaleY(0)}}
+.an-gl{display:flex; flex-direction:column; gap:22px; padding:2px 0;}
+.an-gl-top{display:flex; justify-content:space-between; gap:14px; font-size:13px; font-weight:600; margin-bottom:10px;}
+.an-gl-top span:last-child{font-weight:500; color:var(--ink-faint); font-variant-numeric:tabular-nums; white-space:nowrap;}
+.an-gl-track{height:8px; border-radius:99px; background:#F1F1F4; overflow:hidden;}
+.an-gl-fill{height:100%; border-radius:99px; transform-origin:left; animation:barX .9s var(--ease) both; animation-delay:var(--d);}
+.an-gl-meta{font-size:11.5px; color:var(--ink-faint); margin-top:8px;}
 .an-ring{position:relative; width:132px; height:132px; flex-shrink:0;}
 .an-ring svg{width:100%; height:100%; display:block; overflow:visible;}
 .an-arc{fill:none; cursor:pointer; animation:ringIn 1.1s var(--ease) both; transition:opacity .2s, stroke-width .25s var(--ease-spring);}
@@ -2116,6 +2164,8 @@ input[list]::-webkit-list-button{ display:none !important; }
 <div class="tour-highlight" id="tourHighlight"></div>
 <div class="tour-tip" id="tourTip"></div>
 
+<script>/* d3-sankey 0.12.3 (BSD-3-Clause, Mike Bostock) */(()=>{function O(e,r){let n;if(r===void 0)for(let a of e)a!=null&&(n<a||n===void 0&&a>=a)&&(n=a);else{let a=-1;for(let i of e)(i=r(i,++a,e))!=null&&(n<i||n===void 0&&i>=i)&&(n=i)}return n}function j(e,r){let n;if(r===void 0)for(let a of e)a!=null&&(n>a||n===void 0&&a>=a)&&(n=a);else{let a=-1;for(let i of e)(i=r(i,++a,e))!=null&&(n>i||n===void 0&&i>=i)&&(n=i)}return n}function b(e,r){let n=0;if(r===void 0)for(let a of e)(a=+a)&&(n+=a);else{let a=-1;for(let i of e)(i=+r(i,++a,e))&&(n+=i)}return n}function V(e,r){return e.sourceLinks.length?e.depth:r-1}function M(e){return function(){return e}}function tt(e,r){return q(e.source,r.source)||e.index-r.index}function et(e,r){return q(e.target,r.target)||e.index-r.index}function q(e,r){return e.y0-r.y0}function P(e){return e.value}function mt(e){return e.index}function ht(e){return e.nodes}function xt(e){return e.links}function ot(e,r){let n=e.get(r);if(!n)throw new Error("missing: "+r);return n}function rt({nodes:e}){for(let r of e){let n=r.y0,a=n;for(let i of r.sourceLinks)i.y0=n+i.width/2,n+=i.width;for(let i of r.targetLinks)i.y1=a+i.width/2,a+=i.width}}function E(){let e=0,r=0,n=1,a=1,i=24,x=8,c,d=mt,h=V,g,y,k=ht,L=xt,v=6;function p(){let t={nodes:k.apply(null,arguments),links:L.apply(null,arguments)};return H(t),R(t),A(t),I(t),it(t),rt(t),t}p.update=function(t){return rt(t),t},p.nodeId=function(t){return arguments.length?(d=typeof t=="function"?t:M(t),p):d},p.nodeAlign=function(t){return arguments.length?(h=typeof t=="function"?t:M(t),p):h},p.nodeSort=function(t){return arguments.length?(g=t,p):g},p.nodeWidth=function(t){return arguments.length?(i=+t,p):i},p.nodePadding=function(t){return arguments.length?(x=c=+t,p):x},p.nodes=function(t){return arguments.length?(k=typeof t=="function"?t:M(t),p):k},p.links=function(t){return arguments.length?(L=typeof t=="function"?t:M(t),p):L},p.linkSort=function(t){return arguments.length?(y=t,p):y},p.size=function(t){return arguments.length?(e=r=0,n=+t[0],a=+t[1],p):[n-e,a-r]},p.extent=function(t){return arguments.length?(e=+t[0][0],n=+t[1][0],r=+t[0][1],a=+t[1][1],p):[[e,r],[n,a]]},p.iterations=function(t){return arguments.length?(v=+t,p):v};function H({nodes:t,links:u}){for(let[s,o]of t.entries())o.index=s,o.sourceLinks=[],o.targetLinks=[];let f=new Map(t.map((s,o)=>[d(s,o,t),s]));for(let[s,o]of u.entries()){o.index=s;let{source:l,target:m}=o;typeof l!="object"&&(l=o.source=ot(f,l)),typeof m!="object"&&(m=o.target=ot(f,m)),l.sourceLinks.push(o),m.targetLinks.push(o)}if(y!=null)for(let{sourceLinks:s,targetLinks:o}of t)s.sort(y),o.sort(y)}function R({nodes:t}){for(let u of t)u.value=u.fixedValue===void 0?Math.max(b(u.sourceLinks,P),b(u.targetLinks,P)):u.fixedValue}function A({nodes:t}){let u=t.length,f=new Set(t),s=new Set,o=0;for(;f.size;){for(let l of f){l.depth=o;for(let{target:m}of l.sourceLinks)s.add(m)}if(++o>u)throw new Error("circular link");f=s,s=new Set}}function I({nodes:t}){let u=t.length,f=new Set(t),s=new Set,o=0;for(;f.size;){for(let l of f){l.height=o;for(let{source:m}of l.targetLinks)s.add(m)}if(++o>u)throw new Error("circular link");f=s,s=new Set}}function S({nodes:t}){let u=O(t,o=>o.depth)+1,f=(n-e-i)/(u-1),s=new Array(u);for(let o of t){let l=Math.max(0,Math.min(u-1,Math.floor(h.call(null,o,u))));o.layer=l,o.x0=e+l*f,o.x1=o.x0+i,s[l]?s[l].push(o):s[l]=[o]}if(g)for(let o of s)o.sort(g);return s}function N(t){let u=j(t,f=>(a-r-(f.length-1)*c)/b(f,P));for(let f of t){let s=r;for(let o of f){o.y0=s,o.y1=s+o.value*u,s=o.y1+c;for(let l of o.sourceLinks)l.width=l.value*u}s=(a-s+c)/(f.length+1);for(let o=0;o<f.length;++o){let l=f[o];l.y0+=s*(o+1),l.y1+=s*(o+1)}ct(f)}}function it(t){let u=S(t);c=Math.min(x,(a-r)/(O(u,f=>f.length)-1)),N(u);for(let f=0;f<v;++f){let s=Math.pow(.99,f),o=Math.max(1-s,(f+1)/v);lt(u,s,o),ut(u,s,o)}}function ut(t,u,f){for(let s=1,o=t.length;s<o;++s){let l=t[s];for(let m of l){let C=0,_=0;for(let{source:z,value:D}of m.targetLinks){let B=D*(m.layer-z.layer);C+=dt(z,m)*B,_+=B}if(!(_>0))continue;let T=(C/_-m.y0)*u;m.y0+=T,m.y1+=T,$(m)}g===void 0&&l.sort(q),G(l,f)}}function lt(t,u,f){for(let s=t.length,o=s-2;o>=0;--o){let l=t[o];for(let m of l){let C=0,_=0;for(let{target:z,value:D}of m.sourceLinks){let B=D*(z.layer-m.layer);C+=pt(m,z)*B,_+=B}if(!(_>0))continue;let T=(C/_-m.y0)*u;m.y0+=T,m.y1+=T,$(m)}g===void 0&&l.sort(q),G(l,f)}}function G(t,u){let f=t.length>>1,s=t[f];U(t,s.y0-c,f-1,u),K(t,s.y1+c,f+1,u),U(t,a,t.length-1,u),K(t,r,0,u)}function K(t,u,f,s){for(;f<t.length;++f){let o=t[f],l=(u-o.y0)*s;l>1e-6&&(o.y0+=l,o.y1+=l),u=o.y1+c}}function U(t,u,f,s){for(;f>=0;--f){let o=t[f],l=(o.y1-u)*s;l>1e-6&&(o.y0-=l,o.y1-=l),u=o.y0-c}}function $({sourceLinks:t,targetLinks:u}){if(y===void 0){for(let{source:{sourceLinks:f}}of u)f.sort(et);for(let{target:{targetLinks:f}}of t)f.sort(tt)}}function ct(t){if(y===void 0)for(let{sourceLinks:u,targetLinks:f}of t)u.sort(et),f.sort(tt)}function dt(t,u){let f=t.y0-(t.sourceLinks.length-1)*c/2;for(let{target:s,width:o}of t.sourceLinks){if(s===u)break;f+=o+c}for(let{source:s,width:o}of u.targetLinks){if(s===t)break;f-=o}return f}function pt(t,u){let f=u.y0-(u.targetLinks.length-1)*c/2;for(let{source:s,width:o}of u.targetLinks){if(s===t)break;f+=o+c}for(let{target:s,width:o}of t.sourceLinks){if(s===u)break;f-=o}return f}return p}var W=Math.PI,X=2*W,w=1e-6,gt=X-w;function Y(){this._x0=this._y0=this._x1=this._y1=null,this._=""}function nt(){return new Y}Y.prototype=nt.prototype={constructor:Y,moveTo:function(e,r){this._+="M"+(this._x0=this._x1=+e)+","+(this._y0=this._y1=+r)},closePath:function(){this._x1!==null&&(this._x1=this._x0,this._y1=this._y0,this._+="Z")},lineTo:function(e,r){this._+="L"+(this._x1=+e)+","+(this._y1=+r)},quadraticCurveTo:function(e,r,n,a){this._+="Q"+ +e+","+ +r+","+(this._x1=+n)+","+(this._y1=+a)},bezierCurveTo:function(e,r,n,a,i,x){this._+="C"+ +e+","+ +r+","+ +n+","+ +a+","+(this._x1=+i)+","+(this._y1=+x)},arcTo:function(e,r,n,a,i){e=+e,r=+r,n=+n,a=+a,i=+i;var x=this._x1,c=this._y1,d=n-e,h=a-r,g=x-e,y=c-r,k=g*g+y*y;if(i<0)throw new Error("negative radius: "+i);if(this._x1===null)this._+="M"+(this._x1=e)+","+(this._y1=r);else if(k>w)if(!(Math.abs(y*d-h*g)>w)||!i)this._+="L"+(this._x1=e)+","+(this._y1=r);else{var L=n-x,v=a-c,p=d*d+h*h,H=L*L+v*v,R=Math.sqrt(p),A=Math.sqrt(k),I=i*Math.tan((W-Math.acos((p+k-H)/(2*R*A)))/2),S=I/A,N=I/R;Math.abs(S-1)>w&&(this._+="L"+(e+S*g)+","+(r+S*y)),this._+="A"+i+","+i+",0,0,"+ +(y*L>g*v)+","+(this._x1=e+N*d)+","+(this._y1=r+N*h)}},arc:function(e,r,n,a,i,x){e=+e,r=+r,n=+n,x=!!x;var c=n*Math.cos(a),d=n*Math.sin(a),h=e+c,g=r+d,y=1^x,k=x?a-i:i-a;if(n<0)throw new Error("negative radius: "+n);this._x1===null?this._+="M"+h+","+g:(Math.abs(this._x1-h)>w||Math.abs(this._y1-g)>w)&&(this._+="L"+h+","+g),n&&(k<0&&(k=k%X+X),k>gt?this._+="A"+n+","+n+",0,1,"+y+","+(e-c)+","+(r-d)+"A"+n+","+n+",0,1,"+y+","+(this._x1=h)+","+(this._y1=g):k>w&&(this._+="A"+n+","+n+",0,"+ +(k>=W)+","+y+","+(this._x1=e+n*Math.cos(i))+","+(this._y1=r+n*Math.sin(i))))},rect:function(e,r,n,a){this._+="M"+(this._x0=this._x1=+e)+","+(this._y0=this._y1=+r)+"h"+ +n+"v"+ +a+"h"+-n+"Z"},toString:function(){return this._}};var Z=nt;function F(e){return function(){return e}}function ft(e){return e[0]}function at(e){return e[1]}var st=Array.prototype.slice;function yt(e){return e.source}function kt(e){return e.target}function vt(e){var r=yt,n=kt,a=ft,i=at,x=null;function c(){var d,h=st.call(arguments),g=r.apply(this,h),y=n.apply(this,h);if(x||(x=d=Z()),e(x,+a.apply(this,(h[0]=g,h)),+i.apply(this,h),+a.apply(this,(h[0]=y,h)),+i.apply(this,h)),d)return x=null,d+""||null}return c.source=function(d){return arguments.length?(r=d,c):r},c.target=function(d){return arguments.length?(n=d,c):n},c.x=function(d){return arguments.length?(a=typeof d=="function"?d:F(+d),c):a},c.y=function(d){return arguments.length?(i=typeof d=="function"?d:F(+d),c):i},c.context=function(d){return arguments.length?(x=d??null,c):x},c}function Lt(e,r,n,a,i){e.moveTo(r,n),e.bezierCurveTo(r=(r+a)/2,n,r,i,a,i)}function J(){return vt(Lt)}function _t(e){return[e.source.x1,e.y0]}function wt(e){return[e.target.x0,e.y1]}function Q(){return J().source(_t).target(wt)}window.d3Sankey={sankey:E,sankeyLinkHorizontal:Q};})();
+</script>
 <script>
 (function(){
 "use strict";
@@ -2982,15 +3032,17 @@ function renderSummary(){
    currency figures) instead of letting it clip against overflow:hidden. */
 function fitStatValues(){
   document.querySelectorAll(".stat-value").forEach(el=>{
-    el.style.transform = "scale(1)";
-    const available = el.parentElement.clientWidth;
-    const needed = el.scrollWidth;
-    if(needed > available && available > 0){
-      const scale = Math.max(0.6, available / needed);
-      el.style.transform = "scale(" + scale.toFixed(3) + ")";
+    el.style.transform = "none";
+    const available = el.clientWidth;                       /* real content width inside the tile padding */
+    const r = document.createRange(); r.selectNodeContents(el);
+    const needed = r.getBoundingClientRect ? Math.ceil(r.getBoundingClientRect().width) : el.scrollWidth;   /* actual text width, not the block width */
+    if(available > 0 && needed > available){
+      el.style.transform = "scale(" + Math.max(0.5, (available-1) / needed).toFixed(3) + ")";
     }
   });
 }
+window.addEventListener("resize", ()=>{ clearTimeout(window._fsvT); window._fsvT = setTimeout(fitStatValues, 120); });
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>fitStatValues());
 function renderGoalsSummary(){
   const totalGoals = state.goals.length;
   const totalSaved = round2(state.goals.reduce((s,g)=>s+goalSaved(g),0));
@@ -3693,8 +3745,8 @@ document.getElementById("goalActivityList").addEventListener("click", function(e
    scrubbable area lines, spring-in bars, activity rings.
    ============================================================ */
 const CHART_COLORS = {
-  accent:"#3457D5", violet:"#6D3FD1", amber:"#B4690E", gain:"#0E9F6E",
-  rose:"#C23574", teal:"#0E7C86", loss:"#E0402B", ink:"#1C1C1E", faint:"#A6A6AC", border:"#E6E6EA"
+  accent:"#007AFF", violet:"#AF52DE", amber:"#FF9500", gain:"#34C759",
+  rose:"#FF2D55", teal:"#30B0C7", loss:"#FF3B30", ink:"#1C1C1E", faint:"#A6A6AC", border:"#E6E6EA"
 };
 const REDUCED_MOTION = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 let chartUid = 0; const chartWires = [];
@@ -3717,12 +3769,18 @@ function wireCharts(root){
   root.querySelectorAll("[data-to]").forEach(countUp);
   chartWires.splice(0).forEach(f=>f());
 }
+var _anW = 0;
+/* Real drawable width of a full-width analytics card, so SVG charts render 1:1 (no stretching on desktop, no shrinking on phones) */
+function anW(){
+  const g = document.getElementById("analyticsGrid"), gw = g && g.clientWidth ? g.clientWidth : 640;
+  return Math.max(260, Math.min(1400, Math.round(gw - (window.innerWidth<=520 ? 38 : 62))));
+}
 function svgPointer(svg, e, w){ const r = svg.getBoundingClientRect(); return {r, x:(e.clientX-r.left)/r.width*w}; }
 
 /* Smooth area line with gradient fill, draw-in, live end dot and scrub cursor */
 function areaChart(points, color){
   if(!points.length) return `<div class="an-empty">Not enough data yet.</div>`;
-  const id = "ac"+(++chartUid), w = 560, h = 170, pad = 12, top = 14, base = h-26, n = points.length;
+  const id = "ac"+(++chartUid), w = anW(), h = Math.round(Math.max(170, Math.min(260, anW()*0.24))), pad = 12, top = 14, base = h-26, n = points.length;
   const ys = points.map(p=>p.y), minY = Math.min(...ys,0), maxY = Math.max(...ys,0.01), rng = (maxY-minY)||1;
   const sx = n>1 ? (w-pad*2)/(n-1) : 0;
   const C = points.map((p,i)=>[n>1 ? pad+i*sx : w/2, base-((p.y-minY)/rng)*(base-top)]);
@@ -3762,9 +3820,9 @@ function areaChart(points, color){
 
 /* Rounded gradient columns that spring up; hover isolates a month with a glass tooltip */
 function flowChart(cats, A, B){
-  const id = "fc"+(++chartUid), w = 560, h = 190, pad = 12, top = 10, base = h-26, n = cats.length;
+  const id = "fc"+(++chartUid), w = anW(), h = Math.round(Math.max(190, Math.min(280, anW()*0.26))), pad = 12, top = 10, base = h-26, n = cats.length;
   if(!n) return `<div class="an-empty">Not enough data yet.</div>`;
-  const max = Math.max(1,...A,...B), gw = (w-pad*2)/n, bw = Math.max(5, Math.min(18,(gw-12)/2)), gap = 3;
+  const max = Math.max(1,...A,...B), gw = (w-pad*2)/n, bw = Math.max(5, Math.min(30,(gw-14)/2)), gap = 3;
   const grad = (gid,c)=>`<linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}"/><stop offset="1" stop-color="${c}" stop-opacity=".62"/></linearGradient>`;
   let g = [0,1,2].map(i=>{ const y = top+i*(base-top)/2; return `<line class="an-grid-l" x1="${pad}" x2="${w-pad}" y1="${y}" y2="${y}"/>`; }).join("");
   cats.forEach((c,i)=>{
@@ -3818,16 +3876,57 @@ function ringHtml(segs, label, centerVal){
   return `<div class="an-donut-wrap" id="${id}"><div class="an-ring"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)"><circle cx="60" cy="60" r="${R}" fill="none" stroke="#F1F1F4" stroke-width="${SW}"/>${arcs}</g></svg><div class="an-ring-c"><b>${esc(String(centerVal))}</b><span>${esc(label)}</span></div></div><div class="an-donut-legend">${legend}</div></div>`;
 }
 
-/* Concentric activity-style rings for goals (first four), full list beside them */
+/* Goals use the same ring as every other donut: saved shares + remaining track, overall % in the centre */
 function goalRingsHtml(goals){
-  const pal = [CHART_COLORS.accent, CHART_COLORS.gain, CHART_COLORS.violet, CHART_COLORS.amber], rs = [50,39,28,17];
-  const rings = goals.slice(0,4).map((g,i)=>{
-    const p = Math.max(0, Math.min(100, goalPct(g)));
-    return `<circle cx="60" cy="60" r="${rs[i]}" fill="none" stroke="${pal[i]}" stroke-opacity=".14" stroke-width="8"/>` +
-      (p>0 ? `<circle class="an-arc" cx="60" cy="60" r="${rs[i]}" fill="none" pathLength="100" stroke="${pal[i]}" stroke-width="8" stroke-linecap="round" style="stroke-dasharray:${p} ${100-p}; animation-delay:${i*120}ms"/>` : "");
-  }).join("");
-  const rows = goals.slice(0,8).map((g,i)=>`<div class="an-legend-row"><span class="an-legend-dot" style="background:${i<4?pal[i]:"var(--ink-faint)"}"></span><span class="an-legend-label">${esc(g.name)}</span><span class="an-legend-val">${Math.min(100,goalPct(g))}%</span></div>`).join("");
-  return `<div class="an-donut-wrap"><div class="an-ring"><svg viewBox="0 0 120 120"><g transform="rotate(-90 60 60)">${rings}</g></svg></div><div class="an-donut-legend">${rows}</div></div>`;
+  const pal = [CHART_COLORS.accent, CHART_COLORS.gain, CHART_COLORS.violet, CHART_COLORS.amber, CHART_COLORS.rose, CHART_COLORS.teal];
+  const segs = goals.slice(0,8).map((g,i)=>({label:g.name, value:Math.max(0,Math.min(goalSaved(g), g.targetAmount||0)), color:pal[i%6], display:goalPct(g)+"%"}));
+  const target = goals.reduce((x,g)=>x+(g.targetAmount||0),0), saved = goals.reduce((x,g)=>x+Math.min(goalSaved(g), g.targetAmount||0),0);
+  const overall = target>0 ? Math.round(saved/target*100) : 0;
+  if(saved<=0) segs.push({label:"Not started", value:1, color:"#D9D9DF", display:"0%"});
+  return ringHtml(segs, "Overall", overall+"%");
+}
+
+/* Wallet flow: Total wallet balance -> each wallet. Layout by d3-sankey (BSD-3, bundled above); drawn at 1:1 pixel scale. */
+function walletSankeyHtml(wallets){
+  const {sankey, sankeyLinkHorizontal} = window.d3Sankey;
+  const id = "sk"+(++chartUid), W = anW(), mob = W < 500, NW = mob ? 10 : 14;
+  const X1 = mob ? W - 150 - NW : W - 330 - NW;
+  const ws = wallets.map((w,i)=>({name:w.name, bal:walletBalance(w), color:Object.values(CHART_COLORS)[i%6]})).sort((x,y)=>y.bal-x.bal);
+  const total = round2(ws.reduce((x,w)=>x+w.bal,0)), pos = ws.reduce((x,w)=>x+Math.max(0,w.bal),0);
+  const floor = Math.max(1, pos*0.07);                      /* keeps tiny/zero wallets visible */
+  const H = Math.round(Math.max(mob?250:290, ws.length*(mob?70:76)));
+  const nodes = [{}, ...ws.map(()=>({}))];
+  const links = ws.map((w,i)=>({source:0, target:i+1, value:Math.max(floor, w.bal)}));
+  const g = sankey().nodeWidth(NW).nodePadding(mob?28:34).nodeSort(null).extent([[0,52],[X1+NW,H-8]])({nodes, links});
+  /* vertically centre the source node against the wallet column so ribbons fan out evenly */
+  const tot = g.nodes[0], wy0 = Math.min(...g.nodes.slice(1).map(n=>n.y0)), wy1 = Math.max(...g.nodes.slice(1).map(n=>n.y1));
+  const off = (wy0+wy1)/2 - (tot.y0+tot.y1)/2; tot.y0 += off; tot.y1 += off; g.links.forEach(l=>{ l.y0 += off; });
+  const grads = g.links.map((l,i)=>`<linearGradient id="${id}g${i}" gradientUnits="userSpaceOnUse" x1="${l.source.x1}" x2="${l.target.x0}"><stop offset="0" stop-color="${CHART_COLORS.accent}" stop-opacity=".26"/><stop offset="1" stop-color="${ws[i].color}" stop-opacity=".40"/></linearGradient>`).join("");
+  const paths = g.links.map((l,i)=>`<path class="an-sk-link" style="animation-delay:${i*60}ms" d="${sankeyLinkHorizontal()(l)}" pathLength="1" stroke="url(#${id}g${i})" stroke-width="${Math.max(4,l.width).toFixed(1)}" fill="none"/>`).join("");
+  /* de-overlap labels: keep a minimum gap between label centres, nudging down and drawing a leader line when displaced */
+  const gapL = mob ? 40 : 46, ly = g.nodes.slice(1).map(n=>(n.y0+n.y1)/2);
+  for(let k=1;k<ly.length;k++) if(ly[k] < ly[k-1]+gapL) ly[k] = ly[k-1]+gapL;
+  const Hf = Math.max(H, Math.round(ly[ly.length-1]+26));
+  const cut = (t,n)=> t.length>n ? t.slice(0,n-1)+"…" : t;
+  const nd = g.nodes.map((n,i)=>{
+    const rect = `<rect class="an-sk-node" x="${n.x0}" y="${n.y0}" width="${NW}" height="${Math.max(3,n.y1-n.y0)}" rx="${NW/2.5}" fill="${i===0?CHART_COLORS.accent:ws[i-1].color}"/>`;
+    if(i===0) return rect + `<text class="an-sk-t" x="${n.x0}" y="${n.y0-30}">Total balance</text><text class="an-sk-tv" x="${n.x0}" y="${n.y0-8}">${esc(fmt(total))}</text>`;
+    const w = ws[i-1], ny = (n.y0+n.y1)/2, cy = ly[i-1], pct = pos>0 && w.bal>0 ? (w.bal/pos*100).toFixed(1)+"%" : "0%", lx = n.x1+(mob?12:18);
+    const lead = Math.abs(cy-ny)>2 ? `<path d="M${n.x1+3},${ny} L${n.x1+(mob?9:15)},${cy}" stroke="#C7C7CC" stroke-width="1" fill="none"/>` : "";
+    if(mob) return rect + lead + `<text class="an-sk-n" x="${lx}" y="${cy-2}">${esc(cut(w.name,16))}</text><text class="an-sk-v" x="${lx}" y="${cy+15}">${esc(fmt(round2(w.bal)))} · ${pct}</text>`;
+    return rect + lead + `<text class="an-sk-n" x="${lx}" y="${cy-1}">${esc(cut(w.name,26))}</text><text class="an-sk-v" x="${lx}" y="${cy+16}">${pct} of total</text><text class="an-sk-amt" x="${W}" y="${cy+5}" text-anchor="end">${esc(fmt(round2(w.bal)))}</text>`;
+  });
+  return `<svg class="an-sk" id="${id}" viewBox="0 0 ${W} ${Hf}" width="${W}" height="${Hf}" role="img" aria-label="Wallet balance split by wallet"><defs>${grads}</defs>${paths}${nd.join("")}</svg>`;
+}
+
+/* Per-goal saved vs target capsules */
+function goalBarsHtml(goals){
+  const pal = [CHART_COLORS.accent, CHART_COLORS.gain, CHART_COLORS.violet, CHART_COLORS.amber, CHART_COLORS.rose, CHART_COLORS.teal];
+  return `<div class="an-gl">`+goals.slice(0,6).map((g,i)=>{
+    const p = goalPct(g), c = goalIsComplete(g)?CHART_COLORS.gain:goalIsOverdue(g)?CHART_COLORS.loss:pal[i%6];
+    const meta = goalIsComplete(g)?"Completed":goalIsOverdue(g)?"Overdue":(g.targetDate?"Target "+fmtDate(g.targetDate):"No target date");
+    return `<div><div class="an-gl-top"><span>${esc(g.name)}</span><span>${esc(fmt(round2(goalSaved(g))))} / ${esc(fmt(g.targetAmount||0))}</span></div><div class="an-gl-track"><div class="an-gl-fill" style="width:${Math.max(2,p)}%; background:${c}; --d:${i*80}ms"></div></div><div class="an-gl-meta">${p}% · ${esc(meta)}</div></div>`;
+  }).join("")+`</div>`;
 }
 
 /* Ranked horizontal bars with initials and staggered grow-in */
@@ -3850,6 +3949,7 @@ function monthLabel(key){
 }
 function renderAnalytics(){
   const grid = document.getElementById("analyticsGrid");
+  _anW = grid.clientWidth;
   const cards = [];
   const af = state.analyticsFilters || {from:"", to:""};
   const rangeNote = (af.from || af.to) ? ` · ${af.from ? fmtDate(af.from) : "start"} to ${af.to ? fmtDate(af.to) : "now"}` : "";
@@ -3917,28 +4017,11 @@ function renderAnalytics(){
     </div>`);
 
   // 3. Wallet breakdown (current snapshot, not affected by the date filter)
-  const walletSegs = state.wallets.map((w,i)=>({label:w.name, value:Math.max(0,walletBalance(w.id)), color:Object.values(CHART_COLORS)[i % 6], display:fmt(walletBalance(w.id))}));
   cards.push(`
-    <div class="an-card">
+    <div class="an-card an-wide">
       <h3>Wallet breakdown</h3>
-      <p class="an-sub">Share of your current total balance</p>
-      ${ringHtml(walletSegs, "Total", fmt(round2(walletSegs.reduce((x,y)=>x+y.value,0))))}
-    </div>`);
-
-  // 4. Loan status breakdown
-  const filteredTx = state.transactions.filter(t=> (!af.from || t.date>=af.from) && (!af.to || t.date<=af.to));
-  const activeCount = filteredTx.filter(t=>statusOf(t)==="active").length;
-  const completedCount = filteredTx.filter(t=>statusOf(t)==="completed").length;
-  const overdueCount = filteredTx.filter(t=>statusOf(t)==="overdue").length;
-  cards.push(`
-    <div class="an-card">
-      <h3>Loan status</h3>
-      <p class="an-sub">${filteredTx.length} transaction${filteredTx.length===1?"":"s"}${rangeNote}</p>
-      ${ringHtml([
-        {label:"Active", value:activeCount, color:CHART_COLORS.amber, display:activeCount},
-        {label:"Completed", value:completedCount, color:CHART_COLORS.gain, display:completedCount},
-        {label:"Overdue", value:overdueCount, color:CHART_COLORS.loss, display:overdueCount}
-      ], "Loans", filteredTx.length)}
+      <p class="an-sub">How your total balance splits across wallets</p>
+      ${state.wallets.length ? walletSankeyHtml(state.wallets) : `<div class="an-empty">Add a wallet to see this chart.</div>`}
     </div>`);
 
   // 5. Cumulative gain over time (Ledger)
@@ -3957,6 +4040,22 @@ function renderAnalytics(){
       <h3>Cumulative gain</h3>
       <p class="an-sub">Running total of requested minus bill${rangeNote}</p>
       ${gainSeries.length ? areaChart(gainSeries, CHART_COLORS.accent) : `<div class="an-empty">Add a Ledger transaction to see this chart.</div>`}
+    </div>`);
+
+  // 4. Loan status breakdown
+  const filteredTx = state.transactions.filter(t=> (!af.from || t.date>=af.from) && (!af.to || t.date<=af.to));
+  const activeCount = filteredTx.filter(t=>statusOf(t)==="active").length;
+  const completedCount = filteredTx.filter(t=>statusOf(t)==="completed").length;
+  const overdueCount = filteredTx.filter(t=>statusOf(t)==="overdue").length;
+  cards.push(`
+    <div class="an-card">
+      <h3>Loan status</h3>
+      <p class="an-sub">${filteredTx.length} transaction${filteredTx.length===1?"":"s"}${rangeNote}</p>
+      ${ringHtml([
+        {label:"Active", value:activeCount, color:CHART_COLORS.amber, display:activeCount},
+        {label:"Completed", value:completedCount, color:CHART_COLORS.gain, display:completedCount},
+        {label:"Overdue", value:overdueCount, color:CHART_COLORS.loss, display:overdueCount}
+      ], "Loans", filteredTx.length)}
     </div>`);
 
   // 6. Top borrowers by outstanding
@@ -3979,11 +4078,24 @@ function renderAnalytics(){
       ${state.goals.length ? goalRingsHtml(state.goals) : `<div class="an-empty">Set a goal to see progress here.</div>`}
     </div>`);
 
+  // 8. Goal breakdown (saved vs target)
+  cards.push(`
+    <div class="an-card">
+      <h3>Goal breakdown</h3>
+      <p class="an-sub">Saved vs. target for each goal</p>
+      ${state.goals.length ? goalBarsHtml(state.goals) : `<div class="an-empty">Set a goal to see progress here.</div>`}
+    </div>`);
+
   grid.innerHTML = cards.join("");
   wireCharts(grid);
   updateAnFilterCount();
 }
 
+let _anT;
+window.addEventListener("resize", ()=>{ clearTimeout(_anT); _anT = setTimeout(()=>{
+  const g = document.getElementById("analyticsGrid");
+  if(g && g.offsetParent && Math.abs(g.clientWidth-_anW)>24) renderAnalytics();
+}, 180); });
 function renderAll(){
   renderSummary();
   if(state.mainView === "wallets"){
