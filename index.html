@@ -3897,7 +3897,7 @@ function walletSankeyHtml(wallets){
   const H = Math.round(Math.max(mob?250:290, ws.length*(mob?70:76)));
   const nodes = [{}, ...ws.map(()=>({}))];
   const links = ws.map((w,i)=>({source:0, target:i+1, value:Math.max(floor, w.bal)}));
-  const g = sankey().nodeWidth(NW).nodePadding(mob?28:34).nodeSort(null).extent([[0,52],[X1+NW,H-8]])({nodes, links});
+  const g = sankey().nodeWidth(NW).nodePadding(mob?28:34).nodeSort(null).extent([[0,8],[X1+NW,H-8]])({nodes, links});
   /* vertically centre the source node against the wallet column so ribbons fan out evenly */
   const tot = g.nodes[0], wy0 = Math.min(...g.nodes.slice(1).map(n=>n.y0)), wy1 = Math.max(...g.nodes.slice(1).map(n=>n.y1));
   const off = (wy0+wy1)/2 - (tot.y0+tot.y1)/2; tot.y0 += off; tot.y1 += off; g.links.forEach(l=>{ l.y0 += off; });
@@ -3910,13 +3910,13 @@ function walletSankeyHtml(wallets){
   const cut = (t,n)=> t.length>n ? t.slice(0,n-1)+"…" : t;
   const nd = g.nodes.map((n,i)=>{
     const rect = `<rect class="an-sk-node" x="${n.x0}" y="${n.y0}" width="${NW}" height="${Math.max(3,n.y1-n.y0)}" rx="${NW/2.5}" fill="${i===0?CHART_COLORS.accent:ws[i-1].color}"/>`;
-    if(i===0) return rect + `<text class="an-sk-t" x="${n.x0}" y="12">Total balance</text><text class="an-sk-tv" x="${n.x0}" y="36">${esc(fmt(total))}</text>`;
+    if(i===0) return rect;
     const w = ws[i-1], ny = (n.y0+n.y1)/2, cy = ly[i-1], pct = pos>0 && w.bal>0 ? (w.bal/pos*100).toFixed(1)+"%" : "0%", lx = n.x1+(mob?12:18);
     const lead = Math.abs(cy-ny)>2 ? `<path d="M${n.x1+3},${ny} L${n.x1+(mob?9:15)},${cy}" stroke="#C7C7CC" stroke-width="1" fill="none"/>` : "";
     if(mob) return rect + lead + `<text class="an-sk-n" x="${lx}" y="${cy-2}">${esc(cut(w.name,16))}</text><text class="an-sk-v" x="${lx}" y="${cy+15}">${esc(fmt(round2(w.bal)))} · ${pct}</text>`;
     return rect + lead + `<text class="an-sk-n" x="${lx}" y="${cy-1}">${esc(cut(w.name,26))}</text><text class="an-sk-v" x="${lx}" y="${cy+16}">${pct} of total</text><text class="an-sk-amt" x="${W}" y="${cy+5}" text-anchor="end">${esc(fmt(round2(w.bal)))}</text>`;
   });
-  return `<svg class="an-sk" id="${id}" viewBox="0 0 ${W} ${Hf}" width="${W}" height="${Hf}" role="img" aria-label="Wallet balance split by wallet"><defs>${grads}</defs>${paths}${nd.join("")}</svg>`;
+  return `<div class="an-hero"><span class="an-hero-v" data-to="${total}">${fmt(total)}</span></div><div class="an-hero-s">Total balance across ${ws.length} wallet${ws.length===1?"":"s"}</div><svg class="an-sk" id="${id}" viewBox="0 0 ${W} ${Hf}" width="${W}" height="${Hf}" role="img" aria-label="Wallet balance split by wallet"><defs>${grads}</defs>${paths}${nd.join("")}</svg>`;
 }
 
 /* Per-goal saved vs target capsules */
@@ -6150,6 +6150,9 @@ setTimeout(()=>{
   }
   GoogleSync.onStatusChange(refreshSyncUI);
   refreshSyncUI(GoogleSync.getStatus());
+  // tryAutoConnect() handles waiting for the Google Identity Services
+  // script itself, internally, and only if it actually needs it (a
+  // cached, still-valid access token skips that wait entirely).
   GoogleSync.tryAutoConnect();
 })();
 
