@@ -3910,7 +3910,7 @@ function walletSankeyHtml(wallets){
   const cut = (t,n)=> t.length>n ? t.slice(0,n-1)+"…" : t;
   const nd = g.nodes.map((n,i)=>{
     const rect = `<rect class="an-sk-node" x="${n.x0}" y="${n.y0}" width="${NW}" height="${Math.max(3,n.y1-n.y0)}" rx="${NW/2.5}" fill="${i===0?CHART_COLORS.accent:ws[i-1].color}"/>`;
-    if(i===0) return rect + `<text class="an-sk-t" x="${n.x0}" y="${n.y0-30}">Total balance</text><text class="an-sk-tv" x="${n.x0}" y="${n.y0-8}">${esc(fmt(total))}</text>`;
+    if(i===0) return rect + `<text class="an-sk-t" x="${n.x0}" y="12">Total balance</text><text class="an-sk-tv" x="${n.x0}" y="36">${esc(fmt(total))}</text>`;
     const w = ws[i-1], ny = (n.y0+n.y1)/2, cy = ly[i-1], pct = pos>0 && w.bal>0 ? (w.bal/pos*100).toFixed(1)+"%" : "0%", lx = n.x1+(mob?12:18);
     const lead = Math.abs(cy-ny)>2 ? `<path d="M${n.x1+3},${ny} L${n.x1+(mob?9:15)},${cy}" stroke="#C7C7CC" stroke-width="1" fill="none"/>` : "";
     if(mob) return rect + lead + `<text class="an-sk-n" x="${lx}" y="${cy-2}">${esc(cut(w.name,16))}</text><text class="an-sk-v" x="${lx}" y="${cy+15}">${esc(fmt(round2(w.bal)))} · ${pct}</text>`;
